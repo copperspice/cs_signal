@@ -1,4 +1,4 @@
-AC_INIT([cs_signal], [0.9.0], [ansel@copperspice.com])
+AC_INIT([cs_signal], [0.9.0], [info@copperspice.com])
 
 # derive CS hex version from "@PACKAGE_VERSION@"
 HEX_VERSION=$(printf "0x%02x%02x%02x" `echo $PACKAGE_VERSION | tr '.' ' '`)
@@ -11,7 +11,7 @@ AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AC_SYS_LARGEFILE
 
-AC_CONFIG_SRCDIR([src/signal.h])
+AC_CONFIG_SRCDIR([src/cs_signal.h])
 AM_INIT_AUTOMAKE([foreign tar-pax])
 
 LT_INIT([win32-dll disable-static])

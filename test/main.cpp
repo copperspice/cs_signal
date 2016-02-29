@@ -23,9 +23,12 @@
 
 #include <stdio.h>
 
+#include "peach.h"
+
+bool g_unitTest = true;
+
 void test_1();
 void test_2();
-
 
 int main(int argc, char *argv[])
 {
@@ -34,31 +37,78 @@ int main(int argc, char *argv[])
    test_1();   
    test_2();  
 
-   printf("\n\n");
- 
+   printf("\n\n"); 
+
+   if (! g_unitTest) {
+      return 1;
+   }
 }
 
 void test_1()
 {
-   printf("Hello from the CS Signal libray. How may I serve you?\n");
+   bool ok = true;
+   printf("Begin Unit Test One\n");
+
+   TestPushButton okButton;  
+   Peach obj = Peach{};
+
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::actionPressed);
+
+   if (obj.m_slotActionPressed != 0) {
+      // ensure slot has not been accidentally called
+      ok = false;
+   }
+
+   // call the signal
+   okButton.pressed();
+
+   if (obj.m_slotActionPressed != 1) {
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test One - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test One - Failed\n\n");
+      g_unitTest = false;
+      
+   }
 }
 
 void test_2()
 {
-   printf("Run you clever Signal.\n");
+   bool ok = true;
+   printf("Begin Unit Test Two\n");
+
+   TestPushButton okButton;  
+   Peach obj = Peach{};
+
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::actionPressed, CsSignal::ConnectionType::QueuedConnection);
+
+   if (obj.m_slotActionPressed != 0) {
+      // ensure slot has not been accidentally called
+      ok = false;
+   }
+
+   // call the signal
+   okButton.pressed();
+
+   if (obj.m_slotActionPressed != 1) {
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test Two - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Two - Failed\n\n");
+      g_unitTest = false;
+      
+   }
 }
 
 
 
-/*
-
-Ginger::Ginger()
-{
-}
-
-
-Ginger::~Ginger()
-{
-}
-
-*/

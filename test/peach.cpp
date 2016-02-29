@@ -21,10 +21,16 @@
 *
 ***********************************************************************/
 
-#ifndef LIB_CS_SIGNAL_H
-#define LIB_CS_SIGNAL_H
+#include <stdio.h>
 
+#include "peach.h"
 
+Peach::Peach()
+{  
+}
 
-#endif
-
+void Peach::actionPressed()
+{
+   printf("  Peach SLOT: action pressed  --->   Butler's drink was wonderful! \n");
+   m_slotActionPressed++;
+}
