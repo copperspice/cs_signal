@@ -29,8 +29,30 @@ Peach::Peach()
 {  
 }
 
-void Peach::actionPressed()
+void Peach::methodPressed()
 {
-   printf("  Peach SLOT: action pressed  --->   Butler's drink was wonderful! \n");
-   m_slotActionPressed++;
+   printf("  Peach SLOT: pressed (slot is a method pointer)\n");
+   m_slotPressed++;
 }
+
+void Peach::threadPressed()
+{
+   printf("  Peach SLOT: pressed (slot is from a thread)\n");
+   m_slotPressed++;
+}
+
+void Peach::queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionType type)
+{   
+   SlotBase *receiver = data.receiver();   
+   printf("  queueSlot(): receiver is %s\n", typeid(*receiver).name());   
+
+   std::lock_guard<std::mutex> lock(*m_mutex);
+   m_array->push_back(std::move(data)); 
+
+   // wake up the thread
+   m_alarm->notify_one();
+} 
+
+
+
+

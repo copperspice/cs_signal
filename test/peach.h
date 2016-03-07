@@ -24,6 +24,9 @@
 #ifndef TEST_PEACH_H
 #define TEST_PEACH_H
 
+#include <deque>
+#include <condition_variable>
+
 #include <cs_signal.h>
 #include <cs_slot.h>
 
@@ -45,12 +48,27 @@ class Peach : public CsSignal::SlotBase
    public:
       Peach();
 
-      void actionPressed();      
-      int m_slotActionPressed = 0;
+      void methodPressed();    
+      void threadPressed();  
 
-   private:                       
+      template<class T>
+      void templatePressed();
 
+      int m_slotPressed = 0;
+
+      std::deque<CsSignal::PendingSlot> *m_array;
+      std::mutex *m_mutex;
+      std::condition_variable *m_alarm;
+     
+   private:    
+      void queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionType type) override;     
 };
 
+template<class T>
+void Peach::templatePressed()
+{
+   printf("  Peach SLOT: pressed (slot is a template method)\n");
+   m_slotPressed++;
+}
 
 #endif

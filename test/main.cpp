@@ -21,6 +21,8 @@
 *
 ***********************************************************************/
 
+#include <atomic>
+
 #include <stdio.h>
 
 #include "peach.h"
@@ -29,6 +31,10 @@ bool g_unitTest = true;
 
 void test_1();
 void test_2();
+void test_3();
+void test_4();
+void test_5();
+void test_6();
 
 int main(int argc, char *argv[])
 {
@@ -36,6 +42,10 @@ int main(int argc, char *argv[])
 
    test_1();   
    test_2();  
+   test_3(); 
+   test_4(); 
+   test_5();
+   test_6();
 
    printf("\n\n"); 
 
@@ -52,9 +62,9 @@ void test_1()
    TestPushButton okButton;  
    Peach obj = Peach{};
 
-   connect(okButton, &TestPushButton::pressed, obj, &Peach::actionPressed);
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);
 
-   if (obj.m_slotActionPressed != 0) {
+   if (obj.m_slotPressed != 0) {
       // ensure slot has not been accidentally called
       ok = false;
    }
@@ -62,7 +72,7 @@ void test_1()
    // call the signal
    okButton.pressed();
 
-   if (obj.m_slotActionPressed != 1) {
+   if (obj.m_slotPressed != 1) {
       // ensure slot has been called once
       ok = false;
    }
@@ -77,6 +87,11 @@ void test_1()
    }
 }
 
+void funcPressed()
+{
+   printf("  SLOT: pressed (slot is a function pointer)\n");
+}
+
 void test_2()
 {
    bool ok = true;
@@ -85,20 +100,10 @@ void test_2()
    TestPushButton okButton;  
    Peach obj = Peach{};
 
-   connect(okButton, &TestPushButton::pressed, obj, &Peach::actionPressed, CsSignal::ConnectionType::QueuedConnection);
-
-   if (obj.m_slotActionPressed != 0) {
-      // ensure slot has not been accidentally called
-      ok = false;
-   }
+   connect(okButton, &TestPushButton::pressed, obj, &funcPressed);
 
    // call the signal
-   okButton.pressed();
-
-   if (obj.m_slotActionPressed != 1) {
-      // ensure slot has been called once
-      ok = false;
-   }
+   okButton.pressed();  
 
    if (ok) {
       printf("End Unit Test Two - PASSED\n\n");
@@ -110,5 +115,195 @@ void test_2()
    }
 }
 
+void test_3()
+{
+   bool ok = true;
+   printf("Begin Unit Test Three\n");
 
+   int slotPressed = 0;
 
+   TestPushButton okButton;  
+   Peach obj = Peach{};
+
+   connect(okButton, &TestPushButton::pressed, obj, [&slotPressed]()
+   { 
+      printf("  SLOT: pressed (slot is a lambda)\n");
+      slotPressed++;
+   } );
+
+   if (slotPressed != 0) {
+      // ensure slot has not been accidentally called
+      ok = false;
+   }
+
+   // call the signal
+   okButton.pressed();
+
+   if (slotPressed != 1) {
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test Three - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Three - Failed\n\n");
+      g_unitTest = false;
+      
+   }
+}
+
+void test_4()
+{
+   bool ok = true;
+   printf("Begin Unit Test Four\n");
+
+   TestPushButton okButton;  
+   Peach obj = Peach{};
+
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::templatePressed<int> );
+
+   if (obj.m_slotPressed != 0) {
+      // ensure slot has not been accidentally called
+      ok = false;
+   }
+
+   // call the signal
+   okButton.pressed();
+
+   if (obj.m_slotPressed != 1) {
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test Four - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Fout - Failed\n\n");
+      g_unitTest = false;
+      
+   }
+}
+
+void callBack(std::atomic<bool> &running, std::deque<CsSignal::PendingSlot> &array, std::mutex &mutex, 
+                  std::condition_variable &alarm)
+{
+   printf("  Test 5: Message from thread\n"); 
+
+   while (true) {      
+      std::unique_lock<std::mutex> lock(mutex);       
+                        
+      if (! array.empty())  {      
+         auto data = std::move(array.front());
+         array.pop_front();
+         lock.unlock();
+
+         // call the slot
+         data();
+         continue;
+                                    
+      } else if (! running) {
+         break;
+
+      }
+
+      alarm.wait(lock);
+   } 
+}
+
+void test_5()
+{
+   bool ok = true;
+   printf("Begin Unit Test Five\n");
+
+   // set up threads
+   std::atomic<bool> running;
+   running = true;
+
+   std::deque<CsSignal::PendingSlot> array;
+   std::mutex mutex;
+   std::condition_variable alarm;  
+  
+   std::thread thread1(callBack, std::ref(running), std::ref(array), std::ref(mutex), std::ref(alarm));
+
+   Peach obj;      
+   obj.m_array = &array;
+   obj.m_mutex = &mutex;
+   obj.m_alarm = &alarm;
+
+   TestPushButton okButton;  
+
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::threadPressed, CsSignal::ConnectionType::QueuedConnection);
+ 
+   if (obj.m_slotPressed != 0) {
+      // ensure the slots were not been accidentally called
+      ok = false;
+   }
+
+   // emit the signal
+   okButton.pressed();
+
+   running = false;
+
+   // wake up the thread
+   alarm.notify_one();
+   
+   thread1.join();
+ 
+   if (obj.m_slotPressed != 1) {
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test Five - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Five - Failed\n\n");
+      g_unitTest = false;
+      
+   }
+}
+
+void test_6()
+{
+   bool ok = true;
+   printf("Begin Unit Test Six\n");
+
+   TestPushButton okButton;  
+   Peach obj = Peach{};
+
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);
+
+   if (obj.m_slotPressed != 0) {
+      // ensure slot has not been accidentally called
+      ok = false;
+   }
+
+   // call the signal
+   okButton.pressed();
+     
+   //
+   printf("  Disconnect() then emit signal again\n");                                                                                          
+   disconnect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);  
+   okButton.pressed();
+
+   if (obj.m_slotPressed == 1) {
+      printf("  Signal emitted after disconnect(), did nothing\n");   
+
+   } else {   
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test Six - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Six - Failed\n\n");
+      g_unitTest = false;
+      
+   }
+}

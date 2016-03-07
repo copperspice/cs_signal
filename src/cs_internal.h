@@ -175,6 +175,32 @@ class Index_Sequence_For
 };
 
 
+// ** function ptr   (2)
+
+// ** function uses Index_Sequence Class to unpack a tuple into arguments to a function
+template<typename ...FunctionArgTypes, typename FunctionReturn, typename ...TupleTypes, size_t ...Ks>
+FunctionReturn cs_unpack_function_args_internal(FunctionReturn (*functionPtr)(FunctionArgTypes...),
+      const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...>)
+{   
+   return functionPtr(std::get<Ks>(data)...);
+}
+
+// (api) function pointer unpack tuple
+template<typename ...FunctionArgTypes, typename FunctionReturn, typename ...TupleTypes>
+FunctionReturn cs_unpack_function_args(FunctionReturn (*functionPtr)(FunctionArgTypes...),
+                                       const std::tuple<TupleTypes...> &data)
+{
+   return cs_unpack_function_args_internal(functionPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
+}
+
+// specialization when FunctionReturn as type void, force to CSVoidReturn
+template<typename ...FunctionArgTypes, typename ...TupleTypes>
+CSVoidReturn cs_unpack_function_args(void (*functionPtr)(FunctionArgTypes...), const std::tuple<TupleTypes...> &data)
+{
+   cs_unpack_function_args_internal(functionPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
+   return CSVoidReturn {};
+}
+
 
 // ** method pointer  (3)
 

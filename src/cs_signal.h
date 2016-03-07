@@ -90,19 +90,22 @@ class SignalBase
                   const Internal::BentoAbstract *slotMethod, ConnectionType type) const;    
 
       bool isSignalConnected(const Internal::BentoAbstract &signalMethod_Bento) const;
+
+      template<class Sender, class SignalClass, class ...SignalArgTypes, class ...Ts>
+      friend void activate(Sender &sender, void (SignalClass::*signal)(SignalArgTypes...), Ts &&... Vs); 
        
       template<class Sender, class SignalClass, class ...SignalArgs, class Receiver, class SlotClass, class ...SlotArgs, class SlotReturn>
       friend bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...),
                   const Receiver &receiver, SlotReturn (SlotClass::*slotMethod)(SlotArgs...), 
                   ConnectionType type = ConnectionType::AutoConnection, bool uniqueConnection = false);   
 
-
       template<class Sender, class SignalClass, class ...SignalArgs, class Receiver, class T>
       friend bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...), const Receiver &receiver, 
                   T slotLambda, ConnectionType type = ConnectionType::AutoConnection, bool uniqueConnection = false);
-   
-      template<class Sender, class SignalClass, class ...SignalArgTypes, class ...Ts>
-      friend void activate(Sender &sender, void (SignalClass::*signal)(SignalArgTypes...), Ts &&... Vs); 
+
+      template<class Sender, class Receiver>
+      friend bool internal_disconnect(const Sender &sender, const Internal::BentoAbstract *signalBento, 
+                  const Receiver *receiver, const Internal::BentoAbstract *slotBento); 
 };
 
 template<class Sender, class SignalClass, class ...SignalArgTypes, class ...Ts>
@@ -314,14 +317,14 @@ bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs.
 
    Internal::Bento<T> *slotLambda_Bento = new Internal::Bento<T>(slotLambda);
 
-   std::unique_lock<std::mutex> senderLock {sender->m_mutex_ToReceiver};
+   std::unique_lock<std::mutex> senderLock {sender.m_mutex_ToReceiver};
   
    if (uniqueConnection) {
       // ensure the connection is not added twice
 
-      for (auto &item : sender->m_connectList) {       
+      for (auto &item : sender.m_connectList) {       
 
-         if (item.receiver != receiver) {
+         if (item.receiver != &receiver) {
             continue;
          }
 
@@ -336,14 +339,14 @@ bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs.
       }      
    }
 
-   sender.addConnection(signalMethod_Bento, receiver, slotLambda_Bento, type);
+   sender.addConnection(signalMethod_Bento, &receiver, slotLambda_Bento, type);
 
    return true;
 }
 
 // signal & slot method ptr
 template<class Sender, class SignalClass, class ...SignalArgs, class Receiver, class SlotClass, class ...SlotArgs, class SlotReturn>
-bool disconnect(Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...), Receiver &receiver, 
+bool disconnect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...), const Receiver &receiver, 
                   SlotReturn (SlotClass::*slotMethod)(SlotArgs...))
 {   
    // Sender must be the same class as SignalClass and Sender is a child of SignalClass
@@ -354,17 +357,11 @@ bool disconnect(Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...)
 
    // signal & slot arguments do not agree
    Internal::cs_testConnect_SignalSlotArgs_2< void (*)(SignalArgs...), void (*)(SlotArgs...) >();
-
-   // run time checks
-   if (receiver == nullptr && slotMethod != nullptr) {
-      throw std::invalid_argument("disconnect(): Unexpected null parameter");
-   }
-
-   //
+   
    Internal::Bento<void (SignalClass::*)(SignalArgs...)> signalMethod_Bento(signalMethod);
    Internal::Bento<void (SlotClass::*)(SlotArgs...)> slotMethod_Bento(slotMethod);
 
-   if (! internal_disconnect(sender, &signalMethod_Bento, receiver, &slotMethod_Bento)) {
+   if (! internal_disconnect(sender, &signalMethod_Bento, &receiver, &slotMethod_Bento)) {
       return false;
    }
 
@@ -373,7 +370,7 @@ bool disconnect(Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...)
 
 // slot lambda or slot function ptr
 template<class Sender, class SignalClass, class ...SignalArgs, class Receiver, class T>
-bool disconnect(Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...), Receiver &receiver, T slotMethod)
+bool disconnect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...), const Receiver &receiver, T slotMethod)
 {
    // lambda, compile error
    static_assert(std::is_convertible<decltype(slotMethod == slotMethod), bool>::value,
@@ -383,7 +380,7 @@ bool disconnect(Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...)
    Internal::Bento<void (SignalClass::*)(SignalArgs...)> signalMethod_Bento(signalMethod);
    Internal::Bento<T> slotMethod_Bento(slotMethod);
 
-   if (! internal_disconnect(sender, &signalMethod_Bento, receiver, &slotMethod_Bento)) {
+   if (! internal_disconnect(sender, &signalMethod_Bento, &receiver, &slotMethod_Bento)) {
       return false;
    }
 
@@ -391,23 +388,23 @@ bool disconnect(Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...)
 }
 
 template<class Sender, class Receiver>
-bool internal_disconnect(Sender &sender, const Internal::BentoAbstract *signalBento, 
-                  Receiver &receiver, const Internal::BentoAbstract *slotBento)
+bool internal_disconnect(const Sender &sender, const Internal::BentoAbstract *signalBento, 
+                  const Receiver *receiver, const Internal::BentoAbstract *slotBento)
 {
    bool retval = false;
    bool isDone = false;
 
-   std::unique_lock<std::mutex> senderLock {sender->m_mutex_ToReceiver};
+   std::unique_lock<std::mutex> senderLock {sender.m_mutex_ToReceiver};
    std::unique_lock<std::mutex> receiverLock;
 
-   if (receiver) {
-      receiverLock = std::unique_lock<std::mutex> {receiver->m_mutex_FromSender};
+   if (receiver != nullptr) {
+      receiverLock = std::unique_lock<std::mutex> {receiver->m_mutex_possibleSenders};
    }
 
-   int maxCount = sender->m_connectList.size();
+   int maxCount = sender.m_connectList.size();
 
    for (int k = 0; k < maxCount; ++k) {
-      SignalBase::ConnectStruct &temp = sender->m_connectList[k];
+      SignalBase::ConnectStruct &temp = sender.m_connectList[k];
      
       bool isMatch = false;
 
@@ -430,7 +427,7 @@ bool internal_disconnect(Sender &sender, const Internal::BentoAbstract *signalBe
          }
 
       } else if (signalBento != nullptr) {
-         // receiver must be zero therefore slot is zero
+         // receiver must be null therefore slot is null
 
          if (*signalBento == *temp.signalMethod) {
             isMatch = true;
@@ -438,41 +435,28 @@ bool internal_disconnect(Sender &sender, const Internal::BentoAbstract *signalBe
       }
 
       if (isMatch)  {
-
-/*
-         // broom: review this 
-
-         // delete connection in Receiver
+         // delete possible sender in the receiver
          retval = true;
 
-         if (! receiver)  {
-            // no receiver was locked, lock temp.receiver now
-            receiverLock = std::unique_lock<std::mutex> {temp.receiver->m_mutex_FromSender};
-         }
-
-         for (int x = 0; x < temp.receiver->m_connectList_FromSender.count(); ++x)  {
-            const ConnectStruct &listR = temp.receiver->m_connectList_FromSender[x];
-
-            if (temp.sender == listR.sender && *temp.signalMethod == *listR.signalMethod &&
-                  *temp.slotMethod == *listR.slotMethod) {
-
-               temp.receiver->m_connectList_FromSender.removeAt(x);
-
-               // yes, this is required
-               x = x - 1;
-            }
-         }
-
-         if (! receiver)  {
+         if (receiver == nullptr)  {
+            // no receiver, lock temp.receiver now
+            receiverLock = std::unique_lock<std::mutex> {temp.receiver->m_mutex_possibleSenders};
+         
+            auto &senderList = temp.receiver->m_possibleSenders;
+            senderList.erase(std::find(senderList.rbegin(), senderList.rend(), &sender).base() - 1);
+           
             receiverLock.unlock();
+
+         } else {
+            auto &senderList = temp.receiver->m_possibleSenders;
+            senderList.erase(std::find(senderList.rbegin(), senderList.rend(), &sender).base() - 1);         
+
          }
-*/
-
-
-         if (sender->m_activateBusy != 0) {
+    
+         if (sender.m_activateBusy != 0) {
 
             if (! isDone) {
-               // warnint to activate the connectList has changed
+               // warn activate() the connectList has changed
                sender.m_raceCount++;
                isDone = true;
             }
@@ -481,8 +465,8 @@ bool internal_disconnect(Sender &sender, const Internal::BentoAbstract *signalBe
             temp.type = ConnectionType::InternalDisconnected;
 
          } else {
-            // delete conneciton in Sender
-            sender->m_connectList.removeAt(k);
+            // delete conneciton in sender
+            sender.m_connectList.erase(sender.m_connectList.begin() + k);
 
             // yes, this is required
             k = k - 1;

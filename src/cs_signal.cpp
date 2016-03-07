@@ -51,7 +51,7 @@ void CsSignal::SignalBase::addConnection(const Internal::BentoAbstract *signalMe
 
    if (receiver != nullptr)  {
       // list is in receiver  
-      std::unique_lock<std::mutex> receiverLock {receiver->m_mutex_possibleSender};
+      std::unique_lock<std::mutex> receiverLock {receiver->m_mutex_possibleSenders};
       receiver->m_possibleSenders.push_back(this);
    }
 }

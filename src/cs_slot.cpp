@@ -49,13 +49,8 @@ CsSignal::SignalBase *CsSignal::SlotBase::sender() const
 }
 
 void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionType type)
-{  
-   SlotBase *receiver = data.receiver();
-      
-   printf("  SlotBase queueSlot: user must implement this method\n");
-   printf("  SlotBase queueSlot: receiver is %s\n", typeid(*receiver).name());
-
-   // calling as a test
+{   
+   // calls the slot immediately
    data();
 } 
 
