@@ -48,7 +48,7 @@ class cs_check_connect_args<void (*)(T, ArgsX...), void (*)(T, ArgsY...)>
 {
 };
 
-// slot is a func ptr, slot has no parameters
+//  slot is a func ptr, slot has no parameters
 template<class ...ArgsX>
 class cs_check_connect_args<void (*)(ArgsX...), void (*)()>
    : public std::integral_constant<bool, true>
@@ -80,13 +80,15 @@ class cs_check_connect_args<void (*)(ArgsX...), void (T::*)(ArgsY...) >
 {
 };
 
-// slot is a const method ptr
+//  slot is a const method ptr
 template<class T, class...ArgsX, class...ArgsY>
 class cs_check_connect_args<void (*)(ArgsX...), void (T::*)(ArgsY...) const>
    : public cs_check_connect_args<void (*)(ArgsX...), void (*) (ArgsY...)>
 {
 };
 
+
+// compile time tests
 template<class Sender, class SignalClass>
 void cs_testConnect_SenderSignal()
 {
@@ -115,20 +117,18 @@ void cs_testConnect_SignalSlotArgs_2()
                   "Incompatible signal/slot arguments");
 }
 
-
+// available in C++14 
 template <class T, class... Args>
 std::unique_ptr<T> make_unique(Args &&... args) {
    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-
-// ** index sequence (available in C++14)   (1)
-
-// specialization
+// marker for a function which returns a void
 class CSVoidReturn
 {
 };
 
+// ** index sequence (available in C++14)
 // ** generate list of integers corresponding to the number of data types in a parameter pack
 template<size_t...Ks>
 class Index_Sequence
@@ -175,9 +175,12 @@ class Index_Sequence_For
 };
 
 
-// ** function ptr   (2)
+broom -> START HERE TO OPTIMIZE
 
-// ** function uses Index_Sequence Class to unpack a tuple into arguments to a function
+
+// ** unpack_function   (1)
+// ** uses Index_Sequence Class to unpack a tuple into arguments to a function
+
 template<typename ...FunctionArgTypes, typename FunctionReturn, typename ...TupleTypes, size_t ...Ks>
 FunctionReturn cs_unpack_function_args_internal(FunctionReturn (*functionPtr)(FunctionArgTypes...),
       const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...>)
@@ -202,21 +205,21 @@ CSVoidReturn cs_unpack_function_args(void (*functionPtr)(FunctionArgTypes...), c
 }
 
 
-// ** method pointer  (3)
+// ** unpack_function   (2)
+// ** uses Index_Sequence Class to unpack a tuple into arguments to a method pointer
 
-// ** function uses Index_Sequence Class to unpack a tuple into arguments to a method
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes, size_t ...Ks>
 MethodReturn cs_unpack_method_args_internal(MethodClass *obj, MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...),
-      const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...> dummy)
+                  const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...> dummy)
 {  
    return (obj->*methodPtr)(std::get<Ks>(data)...);
 }
 
-// ** function uses Index_Sequence Class to unpack a tuple into arguments to a method  (duplicate for const)
+// ** const method pointer
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes, size_t ...Ks>
 MethodReturn cs_unpack_method_args_internal(const MethodClass *obj,
-      MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
-      const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...> dummy)
+                  MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
+                  const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...> dummy)
 {
    return (obj->*methodPtr)(std::get<Ks>(data)...);
 }
@@ -224,33 +227,33 @@ MethodReturn cs_unpack_method_args_internal(const MethodClass *obj,
 // (api) method pointer unpack tuple
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes>
 MethodReturn cs_unpack_method_args(MethodClass *obj, MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...),
-                                   const std::tuple<TupleTypes...> &data)
+                  const std::tuple<TupleTypes...> &data)
 {
    return cs_unpack_method_args_internal(obj, methodPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
 }
 
-// specialization when MethodReturn as type void, force to CSVoidReturn
+// specialization when MethodReturn has type void, force to CSVoidReturn
 template<typename MethodClass, typename ...MethodArgTypes, typename ...TupleTypes>
 CSVoidReturn cs_unpack_method_args(MethodClass *obj, void (MethodClass::*methodPtr)(MethodArgTypes...),
-                                   const std::tuple<TupleTypes...> &data)
+                  const std::tuple<TupleTypes...> &data)
 {
    cs_unpack_method_args_internal(obj, methodPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
    return CSVoidReturn {};
 }
 
-// (api) method pointer unpack tuple   (duplicate for const)
+// (api) method pointer unpack tuple   (const method pointer)
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes>
 MethodReturn cs_unpack_method_args(const MethodClass *obj,
-                                   MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
-                                   const std::tuple<TupleTypes...> &data)
+                  MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
+                  const std::tuple<TupleTypes...> &data)
 {
    return cs_unpack_method_args_internal(obj, methodPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
 }
 
-// specialization when MethodReturn as type void, force to CSVoidReturn  (duplicate for const)
+// specialization when MethodReturn as type void, force to CSVoidReturn  (const method pointer)
 template<typename MethodClass, typename ...MethodArgTypes, typename ...TupleTypes>
 CSVoidReturn cs_unpack_method_args(const MethodClass *obj, void (MethodClass::*methodPtr)(MethodArgTypes...) const,
-                                   const std::tuple<TupleTypes...> &data)
+                  const std::tuple<TupleTypes...> &data)
 {
    cs_unpack_method_args_internal(obj, methodPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
    return CSVoidReturn {};

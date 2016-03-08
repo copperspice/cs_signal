@@ -24,28 +24,49 @@
 #include "cs_signal.h"
 #include "cs_slot.h"
 
-thread_local CsSignal::SignalBase *CsSignal::SlotBase::t_currentSender = nullptr;
+thread_local CsSignal::SignalBase *CsSignal::SlotBase::threadLocal_currentSender = nullptr;
 
 CsSignal::SlotBase::SlotBase()
-   : m_threadId(std::this_thread::get_id())
 {
 }
 
-CsSignal::SlotBase::SlotBase(const SlotBase&)
-   : m_threadId(std::this_thread::get_id())
+CsSignal::SlotBase::SlotBase(const SlotBase&)   
 {
 }
 
 CsSignal::SlotBase::~SlotBase()
 {
+   try {
+      // clean up possible sender connections
+      std::lock_guard<std::mutex> receiverLock {m_mutex_possibleSenders};
+   
+      for (auto sender : m_possibleSenders) {
+         std::lock_guard<std::mutex> senderLock {sender->m_mutex_connectList};
+   
+         if (sender->m_activateBusy > 0)  {
+   
+            for (auto &item : sender->m_connectList)  {
+               if (item.receiver == this) {
+                  item.type = ConnectionType::InternalDisconnected;
+               }
+            }
+   
+         } else {             
+            sender->m_connectList.erase(std::remove_if(sender->m_connectList.begin(), sender->m_connectList.end(), 
+                  [this](const SignalBase::ConnectStruct & tmp){ return tmp.receiver == this; } ));   
+         }
+      }
 
-   // broom: clean up possible Sender connections
-
+   } catch (...) {
+      if (! std::uncaught_exception()) {
+         throw;
+      }                       
+   }
 }
 
 CsSignal::SignalBase *CsSignal::SlotBase::sender() const
 {
-   return t_currentSender;
+   return threadLocal_currentSender;
 }
 
 void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionType type)
@@ -56,8 +77,7 @@ void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionType type)
 
 bool CsSignal::SlotBase::compareThreads() const
 {
-   std::thread::id currentThreadId = std::this_thread::get_id();
-   return currentThreadId == getThread();
+   return true;
 }
 
 CsSignal::PendingSlot::PendingSlot(SignalBase *sender, std::unique_ptr<Internal::BentoAbstract> signal_Bento, 

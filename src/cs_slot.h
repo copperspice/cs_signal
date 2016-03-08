@@ -73,27 +73,16 @@ class SlotBase
       // SlotBase(SlotBase &&);
       // operator=(const SlotBase &);
       // operator=(SlotBase &&);
-
-      void setThread(std::thread::id id) {
-         m_threadId.store(id, std::memory_order_release);
-      }
-
-      std::thread::id getThread() const {
-         return m_threadId.load(std::memory_order_acquire);
-      }
-
+     
       SignalBase *sender() const;
 
    private:
-      static thread_local SignalBase *t_currentSender;
+      static thread_local SignalBase *threadLocal_currentSender;
 
       // list of possible Senders for this Receiver
       mutable std::vector<const SignalBase *> m_possibleSenders;
 
       mutable std::mutex m_mutex_possibleSenders;
-
-      // id of the thread which owns the object
-      std::atomic<std::thread::id> m_threadId;
 
       virtual bool compareThreads() const;
       virtual void queueSlot(PendingSlot data, ConnectionType type);

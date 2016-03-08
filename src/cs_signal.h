@@ -31,6 +31,7 @@
 #include <thread>
 #include <type_traits>
 #include <tuple> 
+#include <unordered_set>
 #include <vector>
 
 #include "cs_internal.h"
@@ -66,13 +67,16 @@ enum class DisconnectType {
 class SignalBase
 {
    public:
-      virtual ~SignalBase();             
+      virtual ~SignalBase();         
      
    private:
-      mutable std::mutex m_mutex_ToReceiver;
+      mutable std::mutex m_mutex_connectList;
 
-      mutable bool m_beingDestroyed = false;            
+      // part of destructor
+      static std::mutex m_mutex_beingDestroyed;
+      static std::unordered_set<const SignalBase *> m_beingDestroyed; 
 
+      // part of disconnect
       mutable int m_activateBusy;      
       mutable int m_raceCount;   
 
@@ -91,6 +95,8 @@ class SignalBase
 
       bool isSignalConnected(const Internal::BentoAbstract &signalMethod_Bento) const;
 
+      virtual void handleException(std::exception_ptr data);
+
       template<class Sender, class SignalClass, class ...SignalArgTypes, class ...Ts>
       friend void activate(Sender &sender, void (SignalClass::*signal)(SignalArgTypes...), Ts &&... Vs); 
        
@@ -106,6 +112,8 @@ class SignalBase
       template<class Sender, class Receiver>
       friend bool internal_disconnect(const Sender &sender, const Internal::BentoAbstract *signalBento, 
                   const Receiver *receiver, const Internal::BentoAbstract *slotBento); 
+
+      friend class SlotBase;
 };
 
 template<class Sender, class SignalClass, class ...SignalArgTypes, class ...Ts>
@@ -123,9 +131,12 @@ void activate(Sender &sender, void (SignalClass::*signal)(SignalArgTypes...), Ts
       // nothing is connected to this signal
       return;
    }
+
+   // save the addresss of sender
+   const SignalBase *senderPtr = &sender;
  
    // threading and queuedConnections  
-   std::unique_lock<std::mutex> senderLock {sender.m_mutex_ToReceiver};
+   std::unique_lock<std::mutex> senderLock {sender.m_mutex_connectList};
 
    // store the signal data, false indicates the data will not be copied
    CsSignal::Internal::TeaCup_Data<SignalArgTypes...> dataPack(false, std::forward<Ts>(Vs)...);
@@ -133,8 +144,8 @@ void activate(Sender &sender, void (SignalClass::*signal)(SignalArgTypes...), Ts
    bool raceHappened = false;
    int maxCount = sender.m_connectList.size();
 
-   SignalBase *priorSender   = SlotBase::t_currentSender;
-   SlotBase::t_currentSender = &sender;
+   SignalBase *priorSender = SlotBase::threadLocal_currentSender;
+   SlotBase::threadLocal_currentSender = &sender;
 
    for (int k = 0; k < maxCount; ++k) {
       const SignalBase::ConnectStruct &connection = sender.m_connectList[k];
@@ -154,80 +165,91 @@ void activate(Sender &sender, void (SignalClass::*signal)(SignalArgTypes...), Ts
      
       bool receiverInSameThread = receiver->compareThreads();
 
-      if ( (connection.type == ConnectionType::AutoConnection && ! receiverInSameThread) ||
-           (connection.type == ConnectionType::QueuedConnection)) {
+      int old_activateBusy = sender.m_activateBusy;
+      int old_raceCount    = sender.m_raceCount;
 
+      sender.m_activateBusy++;
+      senderLock.unlock();
+
+      try {
+
+         if ( (connection.type == ConnectionType::AutoConnection && ! receiverInSameThread) ||
+              (connection.type == ConnectionType::QueuedConnection)) {
+   
+               PendingSlot tempObj(&sender, signal_Bento.clone(), receiver, slot_Bento->clone(), 
+                           Internal::make_unique<CsSignal::Internal::TeaCup_Data<SignalArgTypes...>>(true, std::forward<Ts>(Vs)... ));
+   
+               receiver->queueSlot(std::move(tempObj), ConnectionType::QueuedConnection);                        
+   
+         } else if (connection.type == ConnectionType::BlockingQueuedConnection) {   
+               
             PendingSlot tempObj(&sender, signal_Bento.clone(), receiver, slot_Bento->clone(), 
-                        Internal::make_unique<CsSignal::Internal::TeaCup_Data<SignalArgTypes...>>(true, std::forward<Ts>(Vs)... ));
+                           Internal::make_unique<CsSignal::Internal::TeaCup_Data<SignalArgTypes...>>(true, std::forward<Ts>(Vs)... ));
+   
+            receiver->queueSlot(std::move(tempObj), ConnectionType::BlockingQueuedConnection);   
 
-            receiver->queueSlot(std::move(tempObj), ConnectionType::QueuedConnection);                        
-
-      } else if (connection.type == ConnectionType::BlockingQueuedConnection) {
-
-         senderLock.unlock();
-
-         PendingSlot tempObj(&sender, signal_Bento.clone(), receiver, slot_Bento->clone(), 
-                        Internal::make_unique<CsSignal::Internal::TeaCup_Data<SignalArgTypes...>>(true, std::forward<Ts>(Vs)... ));
-
-         receiver->queueSlot(std::move(tempObj), ConnectionType::BlockingQueuedConnection);   
-         senderLock.lock();
-
-      } else if (connection.type == ConnectionType::DirectConnection || connection.type == ConnectionType::AutoConnection) {
-         // direct connection
-
-         sender.m_activateBusy++;
-         int old_raceCount = sender.m_raceCount;
-
-         senderLock.unlock();
-
-         try {
+         } else if (connection.type == ConnectionType::DirectConnection || connection.type == ConnectionType::AutoConnection) {
+            // direct connection         
+                
             // invoke calls the actual method
-            slot_Bento->invoke(receiver, &dataPack);
-
-            if (sender.m_beingDestroyed) {
-               // sender object was destroyed during the invoke of the slot
-               SlotBase::t_currentSender = priorSender;
-               sender.m_activateBusy--;
-               return;
-            }
-
-         } catch (...) {
-            senderLock.lock();
-
-            if (receiverInSameThread) {     
-               SlotBase::t_currentSender = priorSender;
-            }
-
-            throw;
+            slot_Bento->invoke(receiver, &dataPack);            
          }
 
-         try {
-            senderLock.lock();
+         std::lock_guard<std::mutex> lock(SignalBase::m_mutex_beingDestroyed);   // should be a read lock
 
-         } catch (std::exception &) {
+         if (SignalBase::m_beingDestroyed.count(senderPtr)) {
+            // sender has been destroyed
+            SlotBase::threadLocal_currentSender = priorSender;
 
-            if (receiverInSameThread) {
-               SlotBase::t_currentSender = priorSender;
-            }
-           
-            throw std::invalid_argument("activate(): Failed to obtain sender lock");            
+            if (old_activateBusy == 0)  {
+               SignalBase::m_beingDestroyed.erase(senderPtr);
+            }                 
+            
+            return;
+         }        
+         
+      } catch (...) {                   
+         SlotBase::threadLocal_currentSender = priorSender;         
+
+         std::lock_guard<std::mutex> lock(SignalBase::m_mutex_beingDestroyed);   // should be a read lock
+
+         if (SignalBase::m_beingDestroyed.count(senderPtr)) {
+            // sender has been destroyed, all done
+
+            if (old_activateBusy == 0)  {
+               SignalBase::m_beingDestroyed.erase(senderPtr);
+            } 
+
+            return; 
+                        
+         } else {             
+            sender.handleException(std::current_exception());
+            SlotBase::threadLocal_currentSender = &sender;    
+
          }
-
-         if (old_raceCount != sender.m_raceCount) {
-            // connectionList modified
-            raceHappened = true;
-
-            maxCount = sender.m_connectList.size();
-
-            // connect() can add an entry to the end of the list
-            // disconnect() can mark a connection as pending deletion
-         }
-
-         sender.m_activateBusy--;        
       }
+
+      try { 
+         senderLock.lock();
+         sender.m_activateBusy--; 
+
+      } catch (std::exception &) { 
+         SlotBase::threadLocal_currentSender = priorSender; 
+         std::throw_with_nested(std::invalid_argument("activate(): Failed to obtain sender lock"));         
+      }
+
+      if (old_raceCount != sender.m_raceCount) {
+         // connectionList modified
+         raceHappened = true;
+
+         maxCount = sender.m_connectList.size();
+
+         // connect() can add an entry to the end of the list
+         // disconnect() can mark a connection as pending deletion
+      }           
    }
 
-   SlotBase::t_currentSender = priorSender;
+   SlotBase::threadLocal_currentSender = priorSender;
          
    if (raceHappened && sender.m_activateBusy == 0)  {
       // finish clean up for disconnect
@@ -268,7 +290,7 @@ bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs.
    Internal::Bento<void (SlotClass::*)(SlotArgs...)> *slotMethod_Bento = 
             new Internal::Bento<void (SlotClass::*)(SlotArgs...)>(slotMethod);
 
-   std::unique_lock<std::mutex> senderLock {sender.m_mutex_ToReceiver};       
+   std::unique_lock<std::mutex> senderLock {sender.m_mutex_connectList};       
 
    if (uniqueConnection) {
       // ensure the connection is not added twice
@@ -317,7 +339,7 @@ bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs.
 
    Internal::Bento<T> *slotLambda_Bento = new Internal::Bento<T>(slotLambda);
 
-   std::unique_lock<std::mutex> senderLock {sender.m_mutex_ToReceiver};
+   std::unique_lock<std::mutex> senderLock {sender.m_mutex_connectList};
   
    if (uniqueConnection) {
       // ensure the connection is not added twice
@@ -394,7 +416,7 @@ bool internal_disconnect(const Sender &sender, const Internal::BentoAbstract *si
    bool retval = false;
    bool isDone = false;
 
-   std::unique_lock<std::mutex> senderLock {sender.m_mutex_ToReceiver};
+   std::unique_lock<std::mutex> senderLock {sender.m_mutex_connectList};
    std::unique_lock<std::mutex> receiverLock;
 
    if (receiver != nullptr) {

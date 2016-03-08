@@ -23,12 +23,25 @@
 
 #include "cs_signal.h"
 
+std::mutex CsSignal::SignalBase::m_mutex_beingDestroyed;
+std::unordered_set<const CsSignal::SignalBase *> CsSignal::SignalBase::m_beingDestroyed; 
+
 CsSignal::SignalBase::~SignalBase()
 {
+   try {
+      std::lock_guard<std::mutex> lock(m_mutex_connectList);
+   
+      if (m_activateBusy > 0)  {
+         // activate() called a slot which then destroys this sender
+         std::lock_guard<std::mutex> lock(m_mutex_beingDestroyed);
+         m_beingDestroyed.insert(this);
+      }
 
-   // broom:  m_beingDestroyed    set to true and then wait for activate 
-
-
+   } catch (...) {
+      if (! std::uncaught_exception()) {
+         throw;
+      }                       
+   }
 }
 
 void CsSignal::SignalBase::addConnection(const Internal::BentoAbstract *signalMethod, const SlotBase *receiver,
@@ -59,7 +72,7 @@ void CsSignal::SignalBase::addConnection(const Internal::BentoAbstract *signalMe
 bool CsSignal::SignalBase::isSignalConnected(const Internal::BentoAbstract &signalMethod_Bento) const
 {
    bool retval = false;
-   std::unique_lock<std::mutex> senderLock {this->m_mutex_ToReceiver};
+   std::unique_lock<std::mutex> senderLock {this->m_mutex_connectList};
 
    for (auto &item : this->m_connectList) {
 
@@ -79,4 +92,8 @@ bool CsSignal::SignalBase::isSignalConnected(const Internal::BentoAbstract &sign
    return retval;
 }
 
+
+void CsSignal::SignalBase::handleException(std::exception_ptr data)
+{
+}
 
