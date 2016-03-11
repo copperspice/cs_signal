@@ -29,6 +29,12 @@ Peach::Peach()
 {  
 }
 
+void Peach::toggled(bool onOff)
+{
+   printf("  Peach SLOT: pushButton toggled is (0 or 1) %d\n", onOff);
+   m_slotPressed++;
+}
+
 void Peach::methodPressed()
 {
    printf("  Peach SLOT: pressed (slot is a method pointer)\n");
@@ -41,7 +47,7 @@ void Peach::threadPressed()
    m_slotPressed++;
 }
 
-void Peach::queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionType type)
+void Peach::queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionType)
 {   
    SlotBase *receiver = data.receiver();   
    printf("  queueSlot(): receiver is %s\n", typeid(*receiver).name());   

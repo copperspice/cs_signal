@@ -30,7 +30,7 @@ CsSignal::SlotBase::SlotBase()
 {
 }
 
-CsSignal::SlotBase::SlotBase(const SlotBase&)   
+CsSignal::SlotBase::SlotBase(const SlotBase &)   
 {
 }
 
@@ -69,7 +69,7 @@ CsSignal::SignalBase *CsSignal::SlotBase::sender() const
    return threadLocal_currentSender;
 }
 
-void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionType type)
+void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionType)
 {   
    // calls the slot immediately
    data();

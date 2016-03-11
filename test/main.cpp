@@ -35,8 +35,9 @@ void test_3();
 void test_4();
 void test_5();
 void test_6();
+void test_7();
 
-int main(int argc, char *argv[])
+int main()
 {
    printf("\n\n%s\n\n", "** CsSignal Library - Start of Unit Test **");
 
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
    test_4(); 
    test_5();
    test_6();
+   test_7();
 
    printf("\n\n"); 
 
@@ -303,6 +305,39 @@ void test_6()
 
    } else {
       printf("End Unit Test Six - Failed\n\n");
+      g_unitTest = false;
+      
+   }
+}
+
+void test_7()
+{
+   bool ok = true;
+   printf("Begin Unit Test Seven\n");
+
+   TestPushButton okButton;  
+   Peach obj = Peach{};
+
+   connect(okButton, &TestPushButton::toggled, obj, &Peach::toggled);
+
+   if (obj.m_slotPressed != 0) {
+      // ensure slot has not been accidentally called
+      ok = false;
+   }
+
+   // call the signal
+   okButton.toggled(true);
+
+   if (obj.m_slotPressed != 1) {
+      // ensure slot has been called once
+      ok = false;
+   }
+
+   if (ok) {
+      printf("End Unit Test Seven - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Seven - Failed\n\n");
       g_unitTest = false;
       
    }

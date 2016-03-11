@@ -93,7 +93,7 @@ bool CsSignal::SignalBase::isSignalConnected(const Internal::BentoAbstract &sign
 }
 
 
-void CsSignal::SignalBase::handleException(std::exception_ptr data)
+void CsSignal::SignalBase::handleException(std::exception_ptr)
 {
 }
 

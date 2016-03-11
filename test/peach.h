@@ -48,6 +48,7 @@ class Peach : public CsSignal::SlotBase
    public:
       Peach();
 
+      void toggled(bool onOff);
       void methodPressed();    
       void threadPressed();  
 
