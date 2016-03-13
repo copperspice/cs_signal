@@ -6,18 +6,8 @@
 *
 * This file is part of libCsSignal
 *
-* libCsSignal is free software: you can redistribute it and/or 
-* modify it under the terms of the GNU Lesser General Public License
-* version 2.1 as published by the Free Software Foundation.
-*
-* libCsSignal is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with CopperSpice.  If not, see 
-* <http://www.gnu.org/licenses/>.
+* libCsSignal is free software, released under the BSD 2-Clause license.
+* For license details refer to LICENSE provided with this project.
 *
 ***********************************************************************/
 
@@ -175,11 +165,8 @@ class Index_Sequence_For
 };
 
 
-broom -> START HERE TO OPTIMIZE
-
-
 // ** unpack_function   (1)
-// ** uses Index_Sequence Class to unpack a tuple into arguments to a function
+// ** uses Index_Sequence Class to unpack a tuple into arguments for function pointer
 
 template<typename ...FunctionArgTypes, typename FunctionReturn, typename ...TupleTypes, size_t ...Ks>
 FunctionReturn cs_unpack_function_args_internal(FunctionReturn (*functionPtr)(FunctionArgTypes...),
@@ -188,7 +175,7 @@ FunctionReturn cs_unpack_function_args_internal(FunctionReturn (*functionPtr)(Fu
    return functionPtr(std::get<Ks>(data)...);
 }
 
-// (api) function pointer unpack tuple
+// (api) specialization function pointer
 template<typename ...FunctionArgTypes, typename FunctionReturn, typename ...TupleTypes>
 FunctionReturn cs_unpack_function_args(FunctionReturn (*functionPtr)(FunctionArgTypes...),
                                        const std::tuple<TupleTypes...> &data)
@@ -196,7 +183,7 @@ FunctionReturn cs_unpack_function_args(FunctionReturn (*functionPtr)(FunctionArg
    return cs_unpack_function_args_internal(functionPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
 }
 
-// specialization when FunctionReturn as type void, force to CSVoidReturn
+// (api) specialization function pointer, return type is void
 template<typename ...FunctionArgTypes, typename ...TupleTypes>
 CSVoidReturn cs_unpack_function_args(void (*functionPtr)(FunctionArgTypes...), const std::tuple<TupleTypes...> &data)
 {
@@ -206,25 +193,16 @@ CSVoidReturn cs_unpack_function_args(void (*functionPtr)(FunctionArgTypes...), c
 
 
 // ** unpack_function   (2)
-// ** uses Index_Sequence Class to unpack a tuple into arguments to a method pointer
+// ** uses Index_Sequence Class to unpack a tuple into arguments for a method pointer
 
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes, size_t ...Ks>
 MethodReturn cs_unpack_method_args_internal(MethodClass *obj, MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...),
-                  const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...> dummy)
+                  const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...>)
 {  
    return (obj->*methodPtr)(std::get<Ks>(data)...);
 }
 
-// ** const method pointer
-template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes, size_t ...Ks>
-MethodReturn cs_unpack_method_args_internal(const MethodClass *obj,
-                  MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
-                  const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...> dummy)
-{
-   return (obj->*methodPtr)(std::get<Ks>(data)...);
-}
-
-// (api) method pointer unpack tuple
+// (api) specialization method pointer
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes>
 MethodReturn cs_unpack_method_args(MethodClass *obj, MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...),
                   const std::tuple<TupleTypes...> &data)
@@ -232,7 +210,7 @@ MethodReturn cs_unpack_method_args(MethodClass *obj, MethodReturn (MethodClass::
    return cs_unpack_method_args_internal(obj, methodPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
 }
 
-// specialization when MethodReturn has type void, force to CSVoidReturn
+// (api) specialization for method pointer, return type is void
 template<typename MethodClass, typename ...MethodArgTypes, typename ...TupleTypes>
 CSVoidReturn cs_unpack_method_args(MethodClass *obj, void (MethodClass::*methodPtr)(MethodArgTypes...),
                   const std::tuple<TupleTypes...> &data)
@@ -241,7 +219,17 @@ CSVoidReturn cs_unpack_method_args(MethodClass *obj, void (MethodClass::*methodP
    return CSVoidReturn {};
 }
 
-// (api) method pointer unpack tuple   (const method pointer)
+// ** uses Index_Sequence Class to unpack a tuple into arguments for a const method pointer
+
+template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes, size_t ...Ks>
+MethodReturn cs_unpack_method_args_internal(const MethodClass *obj,
+                  MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
+                  const std::tuple<TupleTypes...> &data, Index_Sequence<Ks...>)
+{
+   return (obj->*methodPtr)(std::get<Ks>(data)...);
+}
+
+// (api) specialization for const method pointer
 template<typename MethodClass, class MethodReturn, typename ...MethodArgTypes, typename ...TupleTypes>
 MethodReturn cs_unpack_method_args(const MethodClass *obj,
                   MethodReturn (MethodClass::*methodPtr)(MethodArgTypes...) const,
@@ -250,7 +238,7 @@ MethodReturn cs_unpack_method_args(const MethodClass *obj,
    return cs_unpack_method_args_internal(obj, methodPtr, data, typename Index_Sequence_For<TupleTypes...>::type {} );
 }
 
-// specialization when MethodReturn as type void, force to CSVoidReturn  (const method pointer)
+// (api) specialization for const method pointer, return type is void
 template<typename MethodClass, typename ...MethodArgTypes, typename ...TupleTypes>
 CSVoidReturn cs_unpack_method_args(const MethodClass *obj, void (MethodClass::*methodPtr)(MethodArgTypes...) const,
                   const std::tuple<TupleTypes...> &data)
@@ -260,11 +248,12 @@ CSVoidReturn cs_unpack_method_args(const MethodClass *obj, void (MethodClass::*m
 }
 
 
+// ** templated classes used to add or remove types to a tuple
 
 template <class T1, class T2>
 class prePend
 {
-   // required dummy class to utilze a specialization
+   // required class to utilze a specialization
 };
 
 template <class T, class ...Ts>
@@ -289,52 +278,52 @@ class strip<std::tuple<T1, T2, Ts...>>
       using type = typename prePend<T1, typename strip<std::tuple<T2, Ts...> >::type>::type;      
 };
 
+
+// ** templated classes for generating a data type from a parameter pack
+
+template<unsigned int ...Vs>
+class intValues
+{
+};
+
+template<unsigned int Max, unsigned int ...Vs>
+class makeIntValues : public makeIntValues <Max - 1, Max - 1, Vs...>
+{
+};
+
+template<unsigned int ...Vs>
+class makeIntValues<0, Vs...> : public intValues<Vs...>
+{
+};
+
+// ** templated class to remove the last data type from the "tuple data type"
+
 template <class ...Ts>
-class removeLast
+class removeLastType
 {
    public:
       using type = typename strip< std::tuple<Ts...> >::type;     
 };
 
 
-// **
-template<unsigned int ...Vs>
-class intValues
-{
- public:
-   using type = intValues<Vs...>;
-};
 
-template<unsigned int Max, unsigned int ...Vs>
-class makeIntValues : public makeIntValues < Max - 1, Max - 1, Vs... >
-{
-};
-
-template<unsigned int...Vs>
-class makeIntValues<0, Vs...> : public intValues<Vs...>
-{
-};
+// ** templated functions, to strip the last data element from a tuple
 
 template<unsigned int ...Vs, class ...Ts>
-typename removeLast<Ts...>::type newFunc(intValues<Vs...>, std::tuple<Ts...> tupleValue)
+typename removeLastType<Ts...>::type internalRemoveData(intValues<Vs...>, std::tuple<Ts...> tupleValue)
 {
    return std::forward_as_tuple(std::get<Vs>(tupleValue)...);
 }
 
 template<class ...Ts>
-typename removeLast<Ts...>::type funcRemove(std::tuple<Ts...> tupleValue )
+typename removeLastType<Ts...>::type funcRemoveData(std::tuple<Ts...> tupleValue)
 {
-   return newFunc(makeIntValues < sizeof...(Ts) - 1 > (), tupleValue);
-}
-
-template<class Last, class ...Ts>
-std::tuple<Ts...> funcRemove(std::tuple<Ts..., Last> tupleValue, Ts...Vs )
-{
-   return std::forward_as_tuple(Vs...);
+   return internalRemoveData(makeIntValues<sizeof...(Ts) - 1>(), tupleValue);
 }
 
 
-// ** store slot data in tuple
+// ** class used to store slot data in a tuple
+
 class TeaCupAbstract
 {
    public:
@@ -343,7 +332,7 @@ class TeaCupAbstract
 
 // 1
 template<class ...Ts>
-class TeaCup : public TeaCup< typename removeLast<Ts...>::type >
+class TeaCup : public TeaCup< typename removeLastType<Ts...>::type>
 {
    public:
       template<class T>
@@ -358,8 +347,8 @@ class TeaCup : public TeaCup< typename removeLast<Ts...>::type >
 template<class ...Ts>
 template<class T>
 TeaCup<Ts...>::TeaCup(T lambda)
-   : TeaCup< typename removeLast<Ts...>::type >( [this]() { return funcRemove(m_lambda()); } ), 
-     m_lambda(lambda) 
+   : TeaCup< typename removeLastType<Ts...>::type >( [this]() { return funcRemoveData(m_lambda()); } ), 
+     m_lambda(std::move(lambda)) 
 {
 }
 
@@ -369,7 +358,7 @@ std::tuple<Ts...> TeaCup<Ts...>::getData() const
    return m_lambda();
 }
 
-// 2  specialization, empty data
+// 2  specialization for no args
 template<>
 class TeaCup<>: public TeaCupAbstract
 {
@@ -381,7 +370,7 @@ class TeaCup<>: public TeaCupAbstract
 };
 
 template<class T>
-TeaCup<>::TeaCup(T lambda)
+TeaCup<>::TeaCup(T)
 {
 }
 
@@ -391,8 +380,7 @@ inline std::tuple<> TeaCup<>::getData() const
    return std::tuple<> {};
 }
 
-
-// 3  specialization, tuple
+// 3  specialization, tuple with args
 template<class ...Ts>
 class TeaCup< std::tuple<Ts...> >: public TeaCup<Ts...>
 {
@@ -404,14 +392,15 @@ class TeaCup< std::tuple<Ts...> >: public TeaCup<Ts...>
 template<class ...Ts>
 template<class T>
 TeaCup<std::tuple<Ts...>>::TeaCup(T lambda) 
-   : TeaCup<Ts...>(lambda)
+   : TeaCup<Ts...>(std::move(lambda))
 {
 }
 
 
-// ** next two functions use Index_Sequence Class to convert a tuple to
+// ** template functions use Index_Sequence to convert a tuple to R
+
 template<class R, class T, size_t ...Ks>
-R convert_tuple_internal(T &data, Index_Sequence<Ks...> dummy)
+R convert_tuple_internal(T &data, Index_Sequence<Ks...>)
 {
    return R {std::get<Ks>(data)...};
 }
@@ -423,12 +412,13 @@ R convert_tuple(std::tuple<Ts...> &data)
 }
 
 
-// ** TeaCup Class used to store data for signal activation
+// ** templated class, used to store data for signals
+
 template<class ...Ts>
 class TeaCup_Data: public TeaCup<Ts...>
 {
    public:
-      TeaCup_Data(bool needs_Copying, Ts...);
+      TeaCup_Data(bool needs_copying, Ts...);
       std::tuple<Ts...> getData() const;     
    
    private:
@@ -437,10 +427,10 @@ class TeaCup_Data: public TeaCup<Ts...>
 };
 
 template<class ...Ts>
-TeaCup_Data<Ts...>::TeaCup_Data(bool needs_Copying, Ts...Vs)
+TeaCup_Data<Ts...>::TeaCup_Data(bool needs_copying, Ts...Vs)
    : TeaCup<Ts...>( [this]() { return m_data; } ),
-     m_copyOfData(needs_Copying ? new std::tuple<typename std::remove_reference<Ts>::type...> (Vs...) : nullptr ),
-     m_data(needs_Copying ? convert_tuple<std::tuple<Ts...>> (*m_copyOfData) : std::tuple<Ts...> (Vs...) )
+     m_copyOfData(needs_copying ? new std::tuple<typename std::remove_reference<Ts>::type...> (Vs...) : nullptr),
+     m_data(needs_copying ? convert_tuple<std::tuple<Ts...>> (*m_copyOfData) : std::tuple<Ts...> (Vs...) )
 {
 }
 
@@ -451,7 +441,8 @@ std::tuple<Ts...> TeaCup_Data<Ts...>::getData() const
 }
 
 
-// ** store method pointer for signals and slots
+// ** class to store method pointer for signals and slots
+
 class BentoAbstract
 {
    public:
@@ -516,11 +507,10 @@ class Bento<MethodReturn(MethodClass::*)(MethodArgs...)>: public BentoAbstract
       MethodReturn(MethodClass::*m_methodPtr)(MethodArgs...);
 };
 
+// specialization, const method pointer
 template<class MethodClass, class MethodReturn, class...MethodArgs>
 class Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>: public BentoAbstract
-{
-   // specialization, pointer to const method
-
+{ 
    public:
       Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...) const);
 
@@ -553,9 +543,9 @@ bool Bento<T>::operator ==(const BentoAbstract &) const
 }
 
 template<class T>
-void Bento<T>::invoke(SlotBase *receiver, const TeaCupAbstract *dataPack) const
+void Bento<T>::invoke(SlotBase *, const TeaCupAbstract *dataPack) const
 {
-   // T must be a class, will be a compiler error otherwise
+   // T must be a class or it will be a compiler erroe
    auto methodPtr = &T::operator();
 
    this->invoke_internal(dataPack, methodPtr);
@@ -565,7 +555,7 @@ template<class T>
 template<class MethodReturn, class ...MethodArgs>
 void Bento<T>::invoke_internal(const TeaCupAbstract *dataPack, MethodReturn (T::*methodPtr)(MethodArgs...) const) const
 {
-   // handles non-mutable, captures variables are const
+   // handles non-mutable, captured variables are const
 
    // dynamic cast will return a valid ptr if the slot has equal or less parameters
    // retrieve ptr to teaCup object, which contains the data
@@ -573,9 +563,9 @@ void Bento<T>::invoke_internal(const TeaCupAbstract *dataPack, MethodReturn (T::
 
    if (teaCup) {
       // expand arguments
-      std::tuple<MethodArgs...> args = teaCup->getData();
+      std::tuple<MethodArgs...> &&args = teaCup->getData();
 
-      // unpacks the tuple, then calls the method or slot
+      // unpack the tuple, then call the methodPtr
       cs_unpack_method_args(&m_lambda, methodPtr, args);
    }
 }
@@ -584,7 +574,7 @@ template<class T>
 template<class MethodReturn, class ...MethodArgs>
 void Bento<T>::invoke_internal(const TeaCupAbstract *dataPack, MethodReturn (T::*methodPtr)(MethodArgs...)) const
 {
-   // handles mutable, captures variables are non-const
+   // handles mutable, captured variables are non-const
 
    // dynamic cast will return a valid ptr if the slot has equal or less parameters
    // retrieve ptr to teaCup object, which contains the data
@@ -592,16 +582,14 @@ void Bento<T>::invoke_internal(const TeaCupAbstract *dataPack, MethodReturn (T::
 
    if (teaCup) {
       // expand arguments
-      std::tuple<MethodArgs...> args = teaCup->getData();
-
-      // prep m_lambda
+      std::tuple<MethodArgs...> &&args = teaCup->getData();
+     
       auto object = const_cast<typename std::remove_const<T>::type *>(&m_lambda);
 
-      // unpacks the tuple, then calls the method or slot
+      // unpack the tuple, then call the methodPtr
       cs_unpack_method_args(object, methodPtr, args);
    }
 }
-
 
 // (2) specialization, function pointer
 template<class FunctionReturn, class ...FunctionArgs>
@@ -632,9 +620,9 @@ bool Bento<FunctionReturn (*)(FunctionArgs...)>::operator ==(const BentoAbstract
 }
 
 template<class FunctionReturn, class ...FunctionArgs>
-void Bento<FunctionReturn (*)(FunctionArgs...)>::invoke(SlotBase *receiver, const TeaCupAbstract *dataPack) const
+void Bento<FunctionReturn (*)(FunctionArgs...)>::invoke(SlotBase *, const TeaCupAbstract *dataPack) const
 {
-   // no need to verify receiver since it is not used
+   // no need to verify receiver (slotBase *) since it is not used
 
    // dynamic cast will return a valid ptr if the slot has equal or less parameters
    // retrieve ptr to teaCup object, which contains the data
@@ -642,9 +630,9 @@ void Bento<FunctionReturn (*)(FunctionArgs...)>::invoke(SlotBase *receiver, cons
 
    if (teaCup) {
       // expand arguments
-      std::tuple<FunctionArgs...> args = teaCup->getData();
+      std::tuple<FunctionArgs...> &&args = teaCup->getData();
    
-      // unpack the tuple, then call the method or slot
+      // unpack the tuple, then call the methodPtr
       cs_unpack_function_args(m_methodPtr, args);      
    }
 }
@@ -652,8 +640,8 @@ void Bento<FunctionReturn (*)(FunctionArgs...)>::invoke(SlotBase *receiver, cons
 
 // (3) specialization, method pointer
 template<class MethodClass, class MethodReturn, class...MethodArgs>
-Bento<MethodReturn(MethodClass::*)(MethodArgs...)>::Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...)) :
-   m_methodPtr(ptr)
+Bento<MethodReturn(MethodClass::*)(MethodArgs...)>::Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...)) 
+   : m_methodPtr(ptr)
 {
 }
 
@@ -681,7 +669,7 @@ bool Bento<MethodReturn(MethodClass::*)(MethodArgs...)>::operator ==(const Bento
 template<class MethodClass, class MethodReturn, class ...MethodArgs>
 void Bento<MethodReturn(MethodClass::*)(MethodArgs...)>::invoke(SlotBase *receiver, const TeaCupAbstract *dataPack) const
 {
-   if (! receiver)  {
+   if (! receiver) {
       return;
    }
 
@@ -694,9 +682,9 @@ void Bento<MethodReturn(MethodClass::*)(MethodArgs...)>::invoke(SlotBase *receiv
 
       if (teaCup) {
          // expand arguments
-         std::tuple<MethodArgs...> args = teaCup->getData();       
+         std::tuple<MethodArgs...> &&args = teaCup->getData();       
 
-         // unpacks the tuple, then calls the method or slot
+         // unpacks the tuple, then calls the methodPtr
          cs_unpack_method_args(t_receiver, m_methodPtr, args);
       }
    }
@@ -705,8 +693,8 @@ void Bento<MethodReturn(MethodClass::*)(MethodArgs...)>::invoke(SlotBase *receiv
 
 // (4) specialization, pointer to const method
 template<class MethodClass, class MethodReturn, class...MethodArgs>
-Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>::Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...) const) :
-   m_methodPtr(ptr)
+Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>::Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...) const)
+   : m_methodPtr(ptr)
 {
 }
 
@@ -748,9 +736,9 @@ void Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>::invoke(SlotBase *
 
       if (teaCup) {
          // expand arguments
-         std::tuple<MethodArgs...> args = teaCup->getData();      
+         std::tuple<MethodArgs...> &&args = teaCup->getData();      
 
-         // unpacks the tuple, then calls the method or slot
+         // unpacks the tuple, then calls the methodPtr
          cs_unpack_method_args(t_receiver, m_methodPtr, args);        
       }
    }
