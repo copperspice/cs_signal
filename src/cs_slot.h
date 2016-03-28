@@ -17,13 +17,14 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <thread>
 #include <vector>
 
 namespace CsSignal {
 
 class SignalBase;
-enum class ConnectionType;
+enum class ConnectionKind;
 
 class PendingSlot
 {
@@ -41,6 +42,14 @@ class PendingSlot
 
       SlotBase *receiver() const {
          return m_receiver;
+      }
+
+      std::unique_ptr<Internal::BentoAbstract> internal_moveSlotBento() {
+         return std::move(m_slot_Bento);
+      }
+
+      std::unique_ptr<Internal::TeaCupAbstract> internal_moveTeaCup() {
+         return std::move(m_teaCup_Data);
       }
 
       void operator()() const;
@@ -66,16 +75,19 @@ class SlotBase
      
       SignalBase *sender() const;
 
+   protected:
+      std::set<SignalBase *> internal_senderList() const;
+
    private:
       static thread_local SignalBase *threadLocal_currentSender;
-
+     
       // list of possible Senders for this Receiver
       mutable std::vector<const SignalBase *> m_possibleSenders;
 
       mutable std::mutex m_mutex_possibleSenders;
 
       virtual bool compareThreads() const;
-      virtual void queueSlot(PendingSlot data, ConnectionType type);
+      virtual void queueSlot(PendingSlot data, ConnectionKind type);
 
       friend class SignalBase;
 

@@ -52,7 +52,7 @@ class Peach : public CsSignal::SlotBase
       std::condition_variable *m_alarm;
      
    private:    
-      void queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionType type) override;     
+      void queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionKind type) override;     
 };
 
 template<class T>

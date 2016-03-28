@@ -13,6 +13,7 @@
 
 #include "cs_signal.h"
 
+thread_local CsSignal::Internal::BentoAbstract *CsSignal::SignalBase::threadLocal_currentSignal;
 std::mutex CsSignal::SignalBase::m_mutex_beingDestroyed;
 std::unordered_set<const CsSignal::SignalBase *> CsSignal::SignalBase::m_beingDestroyed; 
 
@@ -27,6 +28,17 @@ CsSignal::SignalBase::~SignalBase()
          m_beingDestroyed.insert(this);
       }
 
+      for (auto &item : m_connectList) {
+         const SlotBase *receiver = item.receiver;     
+
+         if (receiver != nullptr) {
+            std::lock_guard<std::mutex> lock{receiver->m_mutex_possibleSenders};
+         
+            auto &senderList = receiver->m_possibleSenders;
+            senderList.erase(std::find(senderList.rbegin(), senderList.rend(), this).base() - 1);
+         }
+      }
+
    } catch (...) {
       if (! std::uncaught_exception()) {
          throw;
@@ -34,14 +46,14 @@ CsSignal::SignalBase::~SignalBase()
    }
 }
 
-void CsSignal::SignalBase::addConnection(const Internal::BentoAbstract *signalMethod, const SlotBase *receiver,
-                  const Internal::BentoAbstract *slotMethod, ConnectionType type) const
+void CsSignal::SignalBase::addConnection(std::unique_ptr<const Internal::BentoAbstract> signalMethod, const SlotBase *receiver,
+                  std::unique_ptr<const Internal::BentoAbstract> slotMethod, ConnectionKind type) const
 {
    struct ConnectStruct tempStruct;
    
-   tempStruct.signalMethod = signalMethod;
+   tempStruct.signalMethod = std::move(signalMethod);
    tempStruct.receiver     = receiver;
-   tempStruct.slotMethod   = slotMethod;
+   tempStruct.slotMethod   = std::move(slotMethod);
    tempStruct.type         = type;
 
    // list is in sender
@@ -59,31 +71,60 @@ void CsSignal::SignalBase::addConnection(const Internal::BentoAbstract *signalMe
    }
 }
 
-bool CsSignal::SignalBase::isSignalConnected(const Internal::BentoAbstract &signalMethod_Bento) const
+void CsSignal::SignalBase::handleException(std::exception_ptr)
 {
-   bool retval = false;
+}
+
+int CsSignal::SignalBase::internal_cntConnections(const SlotBase *receiver, 
+                  const Internal::BentoAbstract &signalMethod_Bento) const
+{
+   int retval = 0;
+
    std::unique_lock<std::mutex> senderLock {this->m_mutex_connectList};
 
    for (auto &item : this->m_connectList) {
+    
+      if (item.type == ConnectionKind::InternalDisconnected) {
+         // connection is marked for deletion
+         continue;
+      }
+
+      if (receiver && item.receiver != receiver) {
+         continue;
+      }  
 
       if (*(item.signalMethod) != signalMethod_Bento)  {
          continue;
       }
 
-      if (item.type == ConnectionType::InternalDisconnected) {
-         // connection is marked for deletion
-         continue;
-      }
-
-      retval = true;
-      break;
+      retval++;
    }
 
    return retval;
 }
 
-
-void CsSignal::SignalBase::handleException(std::exception_ptr)
+std::set<CsSignal::SlotBase *> CsSignal::SignalBase::internal_receiverList(
+                  const Internal::BentoAbstract &signalMethod_Bento) const
 {
+   std::set<SlotBase *> retval;
+
+   std::unique_lock<std::mutex> senderLock {this->m_mutex_connectList};
+   
+   for (auto &item : this->m_connectList) {
+      
+      if (item.type == ConnectionKind::InternalDisconnected) {
+         // connection is marked for deletion
+         continue;
+      }
+      
+      if (*(item.signalMethod) != signalMethod_Bento)  {
+         continue;
+      }
+   
+      retval.insert(const_cast<SlotBase *>(item.receiver));
+   }     
+   
+   return retval;
 }
+
 

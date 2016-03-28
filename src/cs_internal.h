@@ -462,7 +462,7 @@ inline bool BentoAbstract::operator !=(const BentoAbstract &right) const
 
 
 template<class T>
-class Bento : public BentoAbstract
+class Bento : public virtual BentoAbstract
 {
    public:
       Bento(T ptr);
@@ -482,7 +482,7 @@ class Bento : public BentoAbstract
 };
 
 template<class FunctionReturn, class ...FunctionArgs>
-class Bento<FunctionReturn (*)(FunctionArgs...)> : public BentoAbstract
+class Bento<FunctionReturn (*)(FunctionArgs...)> : public virtual BentoAbstract
 {
    public:
       Bento(FunctionReturn (*ptr)(FunctionArgs...));
@@ -495,7 +495,7 @@ class Bento<FunctionReturn (*)(FunctionArgs...)> : public BentoAbstract
 };
 
 template<class MethodClass, class MethodReturn, class...MethodArgs>
-class Bento<MethodReturn(MethodClass::*)(MethodArgs...)>: public BentoAbstract
+class Bento<MethodReturn(MethodClass::*)(MethodArgs...)>: public virtual BentoAbstract
 {
    public:
       Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...) );
@@ -509,7 +509,7 @@ class Bento<MethodReturn(MethodClass::*)(MethodArgs...)>: public BentoAbstract
 
 // specialization, const method pointer
 template<class MethodClass, class MethodReturn, class...MethodArgs>
-class Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>: public BentoAbstract
+class Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>: public virtual BentoAbstract
 { 
    public:
       Bento(MethodReturn(MethodClass::*ptr)(MethodArgs...) const);

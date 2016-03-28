@@ -26,6 +26,7 @@ void test_4();
 void test_5();
 void test_6();
 void test_7();
+void test_8();
 
 int main()
 {
@@ -38,6 +39,7 @@ int main()
    test_5();
    test_6();
    test_7();
+   test_8();
 
    printf("\n\n"); 
 
@@ -51,8 +53,8 @@ void test_1()
    bool ok = true;
    printf("Begin Unit Test One\n");
 
-   TestPushButton okButton;  
-   Peach obj = Peach{};
+   TestPushButton okButton; 
+   Peach obj = Peach{};    
 
    connect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);
 
@@ -227,7 +229,7 @@ void test_5()
 
    TestPushButton okButton;  
 
-   connect(okButton, &TestPushButton::pressed, obj, &Peach::threadPressed, CsSignal::ConnectionType::QueuedConnection);
+   connect(okButton, &TestPushButton::pressed, obj, &Peach::threadPressed, CsSignal::ConnectionKind::QueuedConnection);
  
    if (obj.m_slotPressed != 0) {
       // ensure the slots were not been accidentally called
@@ -301,13 +303,14 @@ void test_6()
 }
 
 void test_7()
-{
+{   
    bool ok = true;
    printf("Begin Unit Test Seven\n");
 
    TestPushButton okButton;  
    Peach obj = Peach{};
 
+   // testing a signal with a parameter
    connect(okButton, &TestPushButton::toggled, obj, &Peach::toggled);
 
    if (obj.m_slotPressed != 0) {
@@ -332,3 +335,38 @@ void test_7()
       
    }
 }
+
+void test_8()
+{
+   bool ok = true;
+   printf("Begin Unit Test Eight\n");
+
+   if (true) {
+
+      TestPushButton okButton;  
+      Peach obj = Peach{};
+   
+      // sender is an rvalue
+      connect(TestPushButton{}, &TestPushButton::pressed, obj, &funcPressed); 
+      
+      // receiver is an rvalue
+      // connect(okButton, &TestPushButton::pressed, Peach{}, &funcPressed); 
+
+      // sender and receiver are rvalues
+      // connect(TestPushButton{}, &TestPushButton::pressed, Peach{}, &funcPressed); 
+        
+   } else {
+       printf("  Not enabled, used to test for compile issues\n");
+
+   }
+
+   if (ok) {
+      printf("End Unit Test Eight - PASSED\n\n");
+
+   } else {
+      printf("End Unit Test Eight - Failed\n\n");
+      g_unitTest = false;
+      
+   }
+}
+

@@ -37,7 +37,7 @@ void Peach::threadPressed()
    m_slotPressed++;
 }
 
-void Peach::queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionType)
+void Peach::queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionKind)
 {   
    SlotBase *receiver = data.receiver();   
    printf("  queueSlot(): receiver is %s\n", typeid(*receiver).name());   

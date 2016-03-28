@@ -14,7 +14,7 @@ noinst_HEADERS =
 noinst_LTLIBRARIES =
 lib_LTLIBRARIES =
 EXTRA_LTLIBRARIES =
-EXTRA_DIST=
+EXTRA_DIST=LICENSE
 
 # Do not alter lines above this comment
 include src/Makefile.am

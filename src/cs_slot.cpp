@@ -31,13 +31,13 @@ CsSignal::SlotBase::~SlotBase()
       std::lock_guard<std::mutex> receiverLock {m_mutex_possibleSenders};
    
       for (auto sender : m_possibleSenders) {
-         std::lock_guard<std::mutex> senderLock {sender->m_mutex_connectList};
-   
+         std::lock_guard<std::mutex> senderLock {sender->m_mutex_connectList}; 
+
          if (sender->m_activateBusy > 0)  {
    
             for (auto &item : sender->m_connectList)  {
                if (item.receiver == this) {
-                  item.type = ConnectionType::InternalDisconnected;
+                  item.type = ConnectionKind::InternalDisconnected;
                }
             }
    
@@ -54,20 +54,33 @@ CsSignal::SlotBase::~SlotBase()
    }
 }
 
-CsSignal::SignalBase *CsSignal::SlotBase::sender() const
+bool CsSignal::SlotBase::compareThreads() const
 {
-   return threadLocal_currentSender;
+   return true;
 }
 
-void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionType)
+void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionKind)
 {   
    // calls the slot immediately
    data();
 } 
 
-bool CsSignal::SlotBase::compareThreads() const
+CsSignal::SignalBase *CsSignal::SlotBase::sender() const
 {
-   return true;
+   return threadLocal_currentSender;
+}
+
+std::set<CsSignal::SignalBase *> CsSignal::SlotBase::internal_senderList() const
+{
+   std::set<SignalBase *> retval;  
+
+   std::lock_guard<std::mutex> receiverLock {m_mutex_possibleSenders};
+   
+   for (auto sender : m_possibleSenders) {
+      retval.insert(const_cast<SignalBase *>(sender));
+   }
+
+   return retval;
 }
 
 CsSignal::PendingSlot::PendingSlot(SignalBase *sender, std::unique_ptr<Internal::BentoAbstract> signal_Bento, 
