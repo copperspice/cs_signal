@@ -21,12 +21,14 @@
 #include <thread>
 #include <vector>
 
+#include "cs_macro.h"
+
 namespace CsSignal {
 
 class SignalBase;
 enum class ConnectionKind;
 
-class PendingSlot
+class LIB_SIG_EXPORT PendingSlot
 {
    public:
       PendingSlot(const PendingSlot &) = delete;
@@ -62,7 +64,7 @@ class PendingSlot
       std::unique_ptr<Internal::TeaCupAbstract> m_teaCup_Data;
 };
 
-class SlotBase
+class LIB_SIG_EXPORT SlotBase
 {
    public:
       SlotBase();
@@ -79,7 +81,7 @@ class SlotBase
       std::set<SignalBase *> internal_senderList() const;
 
    private:
-      static thread_local SignalBase *threadLocal_currentSender;
+      static SignalBase *&get_threadLocal_currentSender();
      
       // list of possible Senders for this Receiver
       mutable std::vector<const SignalBase *> m_possibleSenders;

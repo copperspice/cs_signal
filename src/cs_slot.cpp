@@ -14,8 +14,6 @@
 #include "cs_signal.h"
 #include "cs_slot.h"
 
-thread_local CsSignal::SignalBase *CsSignal::SlotBase::threadLocal_currentSender = nullptr;
-
 CsSignal::SlotBase::SlotBase()
 {
 }
@@ -54,6 +52,13 @@ CsSignal::SlotBase::~SlotBase()
    }
 }
 
+CsSignal::SignalBase *&CsSignal::SlotBase::get_threadLocal_currentSender()
+{
+   static thread_local CsSignal::SignalBase *threadLocal_currentSender = nullptr;
+
+   return threadLocal_currentSender;
+}
+
 bool CsSignal::SlotBase::compareThreads() const
 {
    return true;
@@ -67,7 +72,7 @@ void CsSignal::SlotBase::queueSlot(PendingSlot data, ConnectionKind)
 
 CsSignal::SignalBase *CsSignal::SlotBase::sender() const
 {
-   return threadLocal_currentSender;
+   return get_threadLocal_currentSender();
 }
 
 std::set<CsSignal::SignalBase *> CsSignal::SlotBase::internal_senderList() const

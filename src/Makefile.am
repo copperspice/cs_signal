@@ -2,14 +2,15 @@ lib_LTLIBRARIES += lib/libCsSignal.la
 lib_libCsSignal_la_SOURCES =
 
 lib_libCsSignal_la_CXXFLAGS = $(AM_CXXFLAGS) \
-   -DBUILD_DATE=\"`date +%Y-%m-%d`\"
+   -DBUILD_DATE=\"`date +%Y-%m-%d`\"   \
+   -DBUILDING_LIB_CS_SIGNAL
 
 lib_libCsSignal_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined
 
 # library
 lib_libCsSignal_la_SOURCES += src/cs_signal.cpp  src/cs_slot.cpp
 
-noinst_HEADERS += src/cs_signal.h src/cs_slot.h src/cs_internal.h
+noinst_HEADERS += src/cs_signal.h src/cs_slot.h src/cs_internal.h src/cs_macro.h
 
 
 # unit test

@@ -23,14 +23,14 @@
 class TestPushButton : public CsSignal::SignalBase
 {   
    public: 
-      SIG_1(void pressed())
-      SIG_2(pressed)
+      SIGNAL_1(void pressed())
+      SIGNAL_2(pressed)
 
-      SIG_1(void clicked(bool checked = false))
-      SIG_2(clicked, checked) 
+      SIGNAL_1(void clicked(bool checked = false))
+      SIGNAL_2(clicked, checked) 
 
-      SIG_1(void toggled(bool checked))
-      SIG_2(toggled, checked)     
+      SIGNAL_1(void toggled(bool checked))
+      SIGNAL_2(toggled, checked)     
 };
 
 class Peach : public CsSignal::SlotBase
