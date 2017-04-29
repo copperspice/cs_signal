@@ -206,17 +206,28 @@ void rcu_list<T, M, Alloc>::rcu_guard::unlock()
     zombie_list_node *n = m_list->m_zombie_head.load();
     n                   = m_zombie->next.load();
 
+    bool last = true;
+
     while (n) {
         if (n->owner.load() != nullptr) {
+            last = false;
             break;
         }
 
-        node *deadNode = n->zombie_node;
-        delete deadNode;
+        n = n->next.load();
+    }
 
-        zombie_list_node *oldnode = n;
-        n                         = n->next.load();
-        delete oldnode;
+    n = m_zombie->next.load();
+
+    if (last) {
+        while (n) {
+            node *deadNode = n->zombie_node;
+            delete deadNode;
+
+            zombie_list_node *oldnode = n;
+            n                         = n->next.load();
+            delete oldnode;
+        }
     }
 
     m_zombie->next.store(n);
