@@ -3,9 +3,6 @@ ACLOCAL_AMFLAGS = -I autotools/m4 --install
 AM_CFLAGS =  -DQT_SHARED
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-# for objective c, used to turn on c++11
-OBJCXXFLAGS = $(CXXFLAGS)
-
 AM_LDFLAGS =
 bin_PROGRAMS=
 BUILT_SOURCES =
@@ -18,6 +15,22 @@ EXTRA_DIST=LICENSE
 
 # Do not alter lines above this comment
 include src/Makefile.am
+
+if OSTYPE_LINUX
+AM_LDFLAGS += -avoid-version
+endif
+
+if OSTYPE_BSD
+AM_LDFLAGS += -avoid-version
+endif
+
+if OSTYPE_WIN
+AM_LDFLAGS += -avoid-version
+endif
+
+if OSTYPE_DARWIN
+AM_LDFLAGS += -avoid-version
+endif
 
 #
 DISTCLEANFILES = .version.cpp .version.o .build-stamp-*
