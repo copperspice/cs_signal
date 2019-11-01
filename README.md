@@ -2,22 +2,22 @@
 
 ### Introduction
 
-CsSignal is a library for thread aware Signal/Slot delivery. This library does not depend upon
-CopperSpice or any other libraries.
+CsSignal is a library for thread aware Signal/Slot delivery. This library does not depend upon CopperSpice or any
+other libraries.
 
-One of the major benefits of CsSignal is how the library delivers signals in a multithreaded
-application. Signals can be delivered using a queued connection or a blocking queued connection.
+One of the major benefits of CsSignal is how the library delivers signals in a multithreaded application. Signals can
+be delivered using a queued connection or a blocking queued connection.
 
-In the CsSignal library signals and slots are both methods whereas in many other signal/slot
-libraries each signal is a separate object.
+In the CsSignal library signals and slots are both methods whereas in many other signal/slot libraries each signal is
+a separate object.
 
 
 ### System Requirements
 
-To use CsSignal you will need a C++14 compiler and a C++14 standard library.
+To use CsSignal you will need a C++17 compiler and a C++17 standard library.
 
-Currently uses the Autotools build system for building and running the unit test suite. The library has been tested with
-clang sanitizer and a major code review.
+Uses the CMake build system for building and running the unit test suite. The library has been tested with clang
+sanitizer and a major code review.
 
 
 ### Documentation
