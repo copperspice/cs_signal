@@ -1,13 +1,18 @@
 /***********************************************************************
 *
-* Copyright (c) 2015-2016 Barbara Geller
-* Copyright (c) 2015-2016 Ansel Sermersheim
-* All rights reserved.
+* Copyright (c) 2015-2020 Barbara Geller
+* Copyright (c) 2015-2020 Ansel Sermersheim
 *
-* This file is part of libCsSignal
+* This file is part of CsSignal.
 *
-* libCsSignal is free software, released under the BSD 2-Clause license.
+* CsSignal is free software, released under the BSD 2-Clause license.
 * For license details refer to LICENSE provided with this project.
+*
+* CopperSpice is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+*
+* https://opensource.org/licenses/BSD-2-Clause
 *
 ***********************************************************************/
 
@@ -21,16 +26,16 @@
 #include <cs_slot.h>
 
 class TestPushButton : public CsSignal::SignalBase
-{   
-   public: 
+{
+   public:
       SIGNAL_1(void pressed())
       SIGNAL_2(pressed)
 
       SIGNAL_1(void clicked(bool checked = false))
-      SIGNAL_2(clicked, checked) 
+      SIGNAL_2(clicked, checked)
 
       SIGNAL_1(void toggled(bool checked))
-      SIGNAL_2(toggled, checked)     
+      SIGNAL_2(toggled, checked)
 };
 
 class Peach : public CsSignal::SlotBase
@@ -39,8 +44,8 @@ class Peach : public CsSignal::SlotBase
       Peach();
 
       void toggled(bool onOff);
-      void methodPressed();    
-      void threadPressed();  
+      void methodPressed();
+      void threadPressed();
 
       template<class T>
       void templatePressed();
@@ -50,9 +55,9 @@ class Peach : public CsSignal::SlotBase
       std::deque<CsSignal::PendingSlot> *m_array;
       std::mutex *m_mutex;
       std::condition_variable *m_alarm;
-     
-   private:    
-      void queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionKind type) override;     
+
+   private:
+      void queueSlot(CsSignal::PendingSlot data, CsSignal::ConnectionKind type) override;
 };
 
 template<class T>

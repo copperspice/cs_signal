@@ -1,11 +1,11 @@
 /***********************************************************************
 *
-* Copyright (c) 2015-2019 Barbara Geller
-* Copyright (c) 2015-2019 Ansel Sermersheim
+* Copyright (c) 2015-2020 Barbara Geller
+* Copyright (c) 2015-2020 Ansel Sermersheim
 *
-* This file is part of libguarded.
+* This file is part of CsLibGuarded.
 *
-* libguarded is free software, released under the BSD 2-Clause license.
+* CsLibGuarded is free software, released under the BSD 2-Clause license.
 * For license details refer to LICENSE provided with this project.
 *
 * CopperSpice is distributed in the hope that it will be useful,
@@ -19,12 +19,12 @@
 #ifndef LIBGUARDED_RCU_LIST_HPP
 #define LIBGUARDED_RCU_LIST_HPP
 
+#include <rcu_guarded.hpp>
+
 #include <atomic>
 #include <cstddef>
 #include <memory>
 #include <mutex>
-
-#include "rcu_guarded.hpp"
 
 namespace libguarded
 {

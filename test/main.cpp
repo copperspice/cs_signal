@@ -1,13 +1,18 @@
 /***********************************************************************
 *
-* Copyright (c) 2015-2016 Barbara Geller
-* Copyright (c) 2015-2016 Ansel Sermersheim
-* All rights reserved.
+* Copyright (c) 2015-2020 Barbara Geller
+* Copyright (c) 2015-2020 Ansel Sermersheim
 *
-* This file is part of libCsSignal
+* This file is part of CsSignal.
 *
-* libCsSignal is free software, released under the BSD 2-Clause license.
+* CsSignal is free software, released under the BSD 2-Clause license.
 * For license details refer to LICENSE provided with this project.
+*
+* CopperSpice is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+*
+* https://opensource.org/licenses/BSD-2-Clause
 *
 ***********************************************************************/
 
@@ -32,16 +37,16 @@ int main()
 {
    printf("\n\n%s\n\n", "** CsSignal Library - Start of Unit Test **");
 
-   test_1();   
-   test_2();  
-   test_3(); 
-   test_4(); 
+   test_1();
+   test_2();
+   test_3();
+   test_4();
    test_5();
    test_6();
    test_7();
    test_8();
 
-   printf("\n\n"); 
+   printf("\n\n");
 
    if (! g_unitTest) {
       return 1;
@@ -53,8 +58,8 @@ void test_1()
    bool ok = true;
    printf("Begin Unit Test One\n");
 
-   TestPushButton okButton; 
-   Peach obj = Peach{};    
+   TestPushButton okButton;
+   Peach obj = Peach{};
 
    connect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);
 
@@ -77,7 +82,7 @@ void test_1()
    } else {
       printf("End Unit Test One - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
@@ -91,13 +96,13 @@ void test_2()
    bool ok = true;
    printf("Begin Unit Test Two\n");
 
-   TestPushButton okButton;  
+   TestPushButton okButton;
    Peach obj = Peach{};
 
    connect(okButton, &TestPushButton::pressed, obj, &funcPressed);
 
    // call the signal
-   okButton.pressed();  
+   okButton.pressed();
 
    if (ok) {
       printf("End Unit Test Two - PASSED\n\n");
@@ -105,7 +110,7 @@ void test_2()
    } else {
       printf("End Unit Test Two - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
@@ -116,11 +121,11 @@ void test_3()
 
    int slotPressed = 0;
 
-   TestPushButton okButton;  
+   TestPushButton okButton;
    Peach obj = Peach{};
 
    connect(okButton, &TestPushButton::pressed, obj, [&slotPressed]()
-   { 
+   {
       printf("  SLOT: pressed (slot is a lambda)\n");
       slotPressed++;
    } );
@@ -144,7 +149,7 @@ void test_3()
    } else {
       printf("End Unit Test Three - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
@@ -153,7 +158,7 @@ void test_4()
    bool ok = true;
    printf("Begin Unit Test Four\n");
 
-   TestPushButton okButton;  
+   TestPushButton okButton;
    Peach obj = Peach{};
 
    connect(okButton, &TestPushButton::pressed, obj, &Peach::templatePressed<int> );
@@ -177,19 +182,19 @@ void test_4()
    } else {
       printf("End Unit Test Fout - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
-void callBack(std::atomic<bool> &running, std::deque<CsSignal::PendingSlot> &array, std::mutex &mutex, 
+void callBack(std::atomic<bool> &running, std::deque<CsSignal::PendingSlot> &array, std::mutex &mutex,
                   std::condition_variable &alarm)
 {
-   printf("  Test 5: Message from thread\n"); 
+   printf("  Test 5: Message from thread\n");
 
-   while (true) {      
-      std::unique_lock<std::mutex> lock(mutex);       
-                        
-      if (! array.empty())  {      
+   while (true) {
+      std::unique_lock<std::mutex> lock(mutex);
+
+      if (! array.empty())  {
          auto data = std::move(array.front());
          array.pop_front();
          lock.unlock();
@@ -197,14 +202,14 @@ void callBack(std::atomic<bool> &running, std::deque<CsSignal::PendingSlot> &arr
          // call the slot
          data();
          continue;
-                                    
+
       } else if (! running) {
          break;
 
       }
 
       alarm.wait(lock);
-   } 
+   }
 }
 
 void test_5()
@@ -218,19 +223,19 @@ void test_5()
 
    std::deque<CsSignal::PendingSlot> array;
    std::mutex mutex;
-   std::condition_variable alarm;  
-  
+   std::condition_variable alarm;
+
    std::thread thread1(callBack, std::ref(running), std::ref(array), std::ref(mutex), std::ref(alarm));
 
-   Peach obj;      
+   Peach obj;
    obj.m_array = &array;
    obj.m_mutex = &mutex;
    obj.m_alarm = &alarm;
 
-   TestPushButton okButton;  
+   TestPushButton okButton;
 
    connect(okButton, &TestPushButton::pressed, obj, &Peach::threadPressed, CsSignal::ConnectionKind::QueuedConnection);
- 
+
    if (obj.m_slotPressed != 0) {
       // ensure the slots were not been accidentally called
       ok = false;
@@ -243,9 +248,9 @@ void test_5()
 
    // wake up the thread
    alarm.notify_one();
-   
+
    thread1.join();
- 
+
    if (obj.m_slotPressed != 1) {
       // ensure slot has been called once
       ok = false;
@@ -257,7 +262,7 @@ void test_5()
    } else {
       printf("End Unit Test Five - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
@@ -266,7 +271,7 @@ void test_6()
    bool ok = true;
    printf("Begin Unit Test Six\n");
 
-   TestPushButton okButton;  
+   TestPushButton okButton;
    Peach obj = Peach{};
 
    connect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);
@@ -278,16 +283,16 @@ void test_6()
 
    // call the signal
    okButton.pressed();
-     
+
    //
-   printf("  Disconnect() then emit signal again\n");                                                                                          
-   disconnect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);  
+   printf("  Disconnect() then emit signal again\n");
+   disconnect(okButton, &TestPushButton::pressed, obj, &Peach::methodPressed);
    okButton.pressed();
 
    if (obj.m_slotPressed == 1) {
-      printf("  Signal emitted after disconnect(), did nothing\n");   
+      printf("  Signal emitted after disconnect(), did nothing\n");
 
-   } else {   
+   } else {
       // ensure slot has been called once
       ok = false;
    }
@@ -298,16 +303,16 @@ void test_6()
    } else {
       printf("End Unit Test Six - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
 void test_7()
-{   
+{
    bool ok = true;
    printf("Begin Unit Test Seven\n");
 
-   TestPushButton okButton;  
+   TestPushButton okButton;
    Peach obj = Peach{};
 
    // testing a signal with a parameter
@@ -332,7 +337,7 @@ void test_7()
    } else {
       printf("End Unit Test Seven - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
@@ -343,18 +348,18 @@ void test_8()
 
    if (true) {
 
-      TestPushButton okButton;  
+      TestPushButton okButton;
       Peach obj = Peach{};
-   
+
       // sender is an rvalue
-      connect(TestPushButton{}, &TestPushButton::pressed, obj, &funcPressed); 
-      
+      connect(TestPushButton{}, &TestPushButton::pressed, obj, &funcPressed);
+
       // receiver is an rvalue
-      // connect(okButton, &TestPushButton::pressed, Peach{}, &funcPressed); 
+      // connect(okButton, &TestPushButton::pressed, Peach{}, &funcPressed);
 
       // sender and receiver are rvalues
-      // connect(TestPushButton{}, &TestPushButton::pressed, Peach{}, &funcPressed); 
-        
+      // connect(TestPushButton{}, &TestPushButton::pressed, Peach{}, &funcPressed);
+
    } else {
        printf("  Not enabled, used to test for compile issues\n");
 
@@ -366,7 +371,7 @@ void test_8()
    } else {
       printf("End Unit Test Eight - Failed\n\n");
       g_unitTest = false;
-      
+
    }
 }
 
