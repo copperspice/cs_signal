@@ -1,14 +1,18 @@
-add_executable(Test "")
+find_package(Threads)
 
-target_sources(Test
-   PRIVATE
-   ${CMAKE_CURRENT_SOURCE_DIR}/test/peach.h
+if (Threads_FOUND)
+   add_executable(Test "")
 
-   ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/test/peach.cpp
-)
+   target_sources(Test
+      PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/test/peach.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/test/peach.cpp
+   )
 
-target_link_libraries(Test
-   PRIVATE
-   CsSignal
-)
+   target_link_libraries(Test
+      PRIVATE
+      CsSignal
+      Threads::Threads
+   )
+endif()

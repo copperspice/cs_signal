@@ -6,6 +6,12 @@ target_compile_definitions(
    -DBUILDING_LIB_CS_SIGNAL
 )
 
+target_compile_features(
+   CsSignal
+   PUBLIC
+   cxx_std_17
+)
+
 target_include_directories(
    CsSignal
    PUBLIC
