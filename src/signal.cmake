@@ -30,8 +30,8 @@ set(CS_SIGNAL_INCLUDE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_signal.h
    ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_slot.h
 
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/rcu_guarded.hpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/rcu_list.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_rcu_guarded.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_rcu_list.h
 )
 
 install(

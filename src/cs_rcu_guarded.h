@@ -1,6 +1,5 @@
 /***********************************************************************
 *
-* Copyright (c) 2015-2020 Barbara Geller
 * Copyright (c) 2015-2020 Ansel Sermersheim
 *
 * This file is part of CsLibGuarded.
@@ -16,15 +15,15 @@
 *
 ***********************************************************************/
 
-#ifndef LIBGUARDED_RCU_GUARDED_HPP
-#define LIBGUARDED_RCU_GUARDED_HPP
+#ifndef CSLIBGUARDED_RCU_GUARDED_H
+#define CSLIBGUARDED_RCU_GUARDED_H
 
 #include <memory>
 
 namespace libguarded
 {
 /**
-   \headerfile rcu_guarded.hpp <libguarded/rcu_guarded.hpp>
+   \headerfile cs_rcu_guarded.h <CsLibGuarded/cs_rcu_guarded.h>
 
    This templated class implements a mechanism which controls access
    to an RCU data structure. The only way to access the underlying
@@ -95,8 +94,7 @@ class rcu_guarded
         using pointer      = const T *;
         using element_type = const T;
 
-        read_handle(const T * ptr)
-            : m_ptr(ptr), m_accessed(false)
+        read_handle(const T *ptr) : m_ptr(ptr), m_accessed(false)
         {
         }
 
@@ -122,7 +120,7 @@ class rcu_guarded
       private:
         void access() const
         {
-            if (! m_accessed) {
+            if (!m_accessed) {
                 m_guard.rcu_read_lock(*m_ptr);
                 m_accessed = true;
             }
