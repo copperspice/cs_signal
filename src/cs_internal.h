@@ -23,7 +23,7 @@
 #include <memory>
 #include <tuple>
 
-/**   \cond INTERNAL (notation so DoxyPress will not parse this class  */
+#if ! defined (CS_DOXYPRESS)
 
 namespace CsSignal {
 
@@ -755,6 +755,6 @@ void Bento<MethodReturn(MethodClass::*)(MethodArgs...) const>::invoke(SlotBase *
 
 } }
 
-/**   \endcond   */
+#endif // doxypress
 
 #endif
