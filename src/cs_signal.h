@@ -62,7 +62,6 @@ Iter1 find(Iter1 iter1, const Iter2 &iter2, const T &value)
    return iter1;
 }
 
-
 template<class Sender, class SignalClass, class ...SignalArgs, class Receiver,
                   class SlotClass, class ...SlotArgs, class SlotReturn>
 bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs...),
@@ -303,8 +302,8 @@ bool connect(const Sender &sender, void (SignalClass::*signalMethod)(SignalArgs.
    std::unique_ptr<Internal::Bento<void (SignalClass::*)(SignalArgs...)>>
                   signalMethod_Bento(new Internal::Bento<void (SignalClass::*)(SignalArgs...)>(signalMethod));
 
-   std::unique_ptr<Internal::Bento<void (SlotClass::*)(SlotArgs...)>>
-                  slotMethod_Bento(new Internal::Bento<void (SlotClass::*)(SlotArgs...)>(slotMethod));
+   std::unique_ptr<Internal::Bento<SlotReturn (SlotClass::*)(SlotArgs...)>>
+                  slotMethod_Bento(new Internal::Bento<SlotReturn (SlotClass::*)(SlotArgs...)>(slotMethod));
 
    auto senderListHandle = sender.m_connectList.lock_write();
 
@@ -432,7 +431,7 @@ bool disconnect(const Sender &sender, void (SignalClass::*signalMethod)(SignalAr
    Internal::cs_testConnect_SignalSlotArgs_2< void (*)(SignalArgs...), void (*)(SlotArgs...) >();
 
    Internal::Bento<void (SignalClass::*)(SignalArgs...)> signalMethod_Bento(signalMethod);
-   Internal::Bento<void (SlotClass::*)(SlotArgs...)> slotMethod_Bento(slotMethod);
+   Internal::Bento<SlotReturn (SlotClass::*)(SlotArgs...)> slotMethod_Bento(slotMethod);
 
    if (! internal_disconnect(sender, &signalMethod_Bento, &receiver, &slotMethod_Bento)) {
       return false;
@@ -514,7 +513,8 @@ bool internal_disconnect(const Sender &sender, const Internal::BentoAbstract *si
    return retval;
 }
 
-}  // namespace
+
+}
 
 #endif
 
