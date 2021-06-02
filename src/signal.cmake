@@ -12,17 +12,30 @@ target_compile_features(
    cxx_std_17
 )
 
+target_sources(CsSignal
+   PRIVATE
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_signal.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_slot.cpp
+)
+
 target_include_directories(
    CsSignal
    PUBLIC
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
 
-target_sources(CsSignal
-   PRIVATE
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_signal.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_slot.cpp
-)
+if(MSVC)
+   if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+      # ensure method pointers have a unique address
+      target_link_options(CsCore
+         PUBLIC
+         /OPT:REF,NOICF
+      )
+   else()
+      message(FATAL_ERROR "CMake Version must be at least 3.13.0 for MSVC")
+
+   endif()
+endif()
 
 set(CS_SIGNAL_INCLUDE
    ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_internal.h
