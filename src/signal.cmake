@@ -37,7 +37,7 @@ set(CS_SIGNAL_INCLUDES
 if(MSVC)
    if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
       # ensure method pointers have a unique address
-      target_link_options(CsCore
+      target_link_options(CsSignal
          PUBLIC
          /OPT:REF,NOICF
       )
