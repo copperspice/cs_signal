@@ -1,4 +1,5 @@
 add_library(CsSignal SHARED "")
+add_library(CsSignal::CsSignal ALIAS CsSignal)
 
 target_compile_definitions(CsSignal
    PRIVATE
@@ -13,6 +14,7 @@ target_compile_features(CsSignal
 target_include_directories(CsSignal
    PUBLIC
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/signal>
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 target_sources(CsSignal
@@ -60,6 +62,7 @@ install(
 
 install(
    EXPORT CsSignalLibraryTargets
+   NAMESPACE CsSignal::
    FILE CsSignalLibraryTargets.cmake
    DESTINATION ${PKG_PREFIX}
 )

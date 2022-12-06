@@ -12,7 +12,7 @@ if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20.0")
    cmake_policy(SET CMP0117 OLD)
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 project(cs_signal)
 
@@ -115,6 +115,25 @@ if (BUILD_TESTS)
    enable_testing()
    add_subdirectory(test)
 endif()
+
+configure_file(
+   ${CMAKE_SOURCE_DIR}/cmake/CsSignalConfig.cmake
+   ${CMAKE_BINARY_DIR}/CsSignalConfig.cmake
+   @ONLY
+)
+
+configure_file(
+   ${CMAKE_SOURCE_DIR}/cmake/CsSignalConfigVersion.cmake
+   ${CMAKE_BINARY_DIR}/CsSignalConfigVersion.cmake
+   @ONLY
+)
+
+install(
+   FILES
+      ${CMAKE_BINARY_DIR}/CsSignalConfig.cmake
+      ${CMAKE_BINARY_DIR}/CsSignalConfigVersion.cmake
+   DESTINATION ${PKG_PREFIX}
+)
 
 # file locations for building
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
