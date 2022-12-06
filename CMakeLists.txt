@@ -101,6 +101,19 @@ else()
    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined")
 endif()
 
+# start output messages
+message("")
+message("-- Searching for required packages\n")
+
+find_package(CsLibGuarded QUIET)
+
+if (CsLibGuarded_FOUND)
+   message(STATUS "CsLibGuarded was found \n"
+      " * Path is ${CsLibGuarded_INCLUDES}\n")
+else()
+   message(STATUS "CsLibGuarded was not found, bundled library will be used\n")
+endif()
+
 # destination for cmake export files
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
    set(PKG_PREFIX "cmake/CsSignal")

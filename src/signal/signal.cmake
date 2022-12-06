@@ -11,10 +11,25 @@ target_compile_features(CsSignal
    cxx_std_17
 )
 
+if (CsLibGuarded_FOUND)
+   # use system headers
+   target_link_libraries(CsSignal
+      PUBLIC
+      CsLibGuarded::CsLibGuarded
+   )
+
+   set(LibGuard_INCLUDE_PATH "")
+
+else()
+   # use annex headers
+   set(LibGuard_INCLUDE_PATH $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded>)
+endif()
+
 target_include_directories(CsSignal
    PUBLIC
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/signal>
    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+   ${LibGuard_INCLUDE_PATH}
 )
 
 target_sources(CsSignal
@@ -28,10 +43,31 @@ set(CS_SIGNAL_INCLUDES
    ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_macro.h
    ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.h
    ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.h
-
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_guarded.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_list.h
 )
+
+if (CsLibGuarded_FOUND)
+   string(TOLOWER "${CS_INSTALL_MODE}" CS_INSTALL_MODE)
+
+   if (NOT CS_INSTALL_MODE STREQUAL "package")
+      # deploy mode (default)
+
+      list(APPEND CS_SIGNAL_INCLUDES
+         ${CsLibGuarded_INCLUDE_DIR}/cs_rcu_guarded.h
+         ${CsLibGuarded_INCLUDE_DIR}/cs_rcu_list.h
+      )
+
+   else()
+      # package mode, do not copy install headers
+
+   endif()
+
+else()
+   list(APPEND CS_SIGNAL_INCLUDES
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_guarded.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_list.h
+   )
+endif()
+
 
 if(MSVC)
    if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
