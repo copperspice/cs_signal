@@ -1,37 +1,34 @@
 add_library(CsSignal SHARED "")
 
-target_compile_definitions(
-   CsSignal
+target_compile_definitions(CsSignal
    PRIVATE
    -DBUILDING_LIB_CS_SIGNAL
 )
 
-target_compile_features(
-   CsSignal
+target_compile_features(CsSignal
    PUBLIC
    cxx_std_17
 )
 
-target_include_directories(
-   CsSignal
+target_include_directories(CsSignal
    PUBLIC
-   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/signal>
 )
 
 target_sources(CsSignal
    PRIVATE
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_signal.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_slot.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.cpp
 )
 
 set(CS_SIGNAL_INCLUDES
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_internal.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_macro.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_signal.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_slot.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_internal.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_macro.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.h
 
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_rcu_guarded.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/cs_rcu_list.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_guarded.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_list.h
 )
 
 if(MSVC)
@@ -58,7 +55,7 @@ install(
 install(
    FILES ${CS_SIGNAL_INCLUDES}
    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-   COMPONENT Devel
+   COMPONENT CsSignal
 )
 
 install(

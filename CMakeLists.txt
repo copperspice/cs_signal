@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
-cmake_policy(VERSION 3.16..3.21)
+cmake_policy(VERSION 3.16..3.23)
 
 if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.19.0")
    # allows spaces in ctest names
@@ -23,7 +23,7 @@ set(BUILD_MICRO "3")
 set(BUILD_COMPONENTS "cs_signal")
 
 # catch2 set up
-option(BUILD_TESTS "Enables building the Catch2 Unit Tests" OFF)
+option(BUILD_TESTS "Enables building the Catch2 unit tests" OFF)
 
 include(CheckCXXCompilerFlag)
 include(CheckCXXSourceCompiles)
@@ -31,7 +31,7 @@ include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckTypeSize)
 
-# file locations for installing
+# location for install or package
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
    include(GNUInstallDirs)
    set(CMAKE_INSTALL_RPATH "@executable_path")
@@ -91,6 +91,8 @@ elseif(MSVC)
    string (REGEX REPLACE "/W3" "" CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}"  )
    string (REGEX REPLACE "/W3" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
+   add_compile_options("/utf-8")
+
 else()
    # Linux, Windows (MinGW)
 
@@ -108,19 +110,18 @@ else()
 
 endif()
 
-# file locations for building
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-include(src/signal.cmake)
-include(test/test.cmake)
-
 # catch2 set up
 if (BUILD_TESTS)
    enable_testing()
    add_subdirectory(test)
 endif()
+
+# file locations for building
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+include(src/signal/signal.cmake)
 
 if (${CMAKE_SIZEOF_VOID_P} EQUAL 4)
    set(TARGETBITS 32)
@@ -133,12 +134,4 @@ message("CsSignal configured to run on:  ${CMAKE_SYSTEM_NAME} ${TARGETBITS} bit,
 message("CsSignal will be built in:      ${CMAKE_BINARY_DIR}")
 message("CsSignal will be installed in:  ${CMAKE_INSTALL_PREFIX}")
 message("\n")
-
-
-
-
-
-
-
-
 
