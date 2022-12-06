@@ -8,7 +8,7 @@
 * CsSignal is free software, released under the BSD 2-Clause license.
 * For license details refer to LICENSE provided with this project.
 *
-* CopperSpice is distributed in the hope that it will be useful,
+* CsSignal is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 *
@@ -19,12 +19,14 @@
 #ifndef LIB_CS_MACRO_H
 #define LIB_CS_MACRO_H
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 
 #ifdef BUILDING_LIB_CS_SIGNAL
 # define LIB_SIG_EXPORT     __declspec(dllexport)
+
 #else
 # define LIB_SIG_EXPORT     __declspec(dllimport)
+
 #endif
 
 #else
