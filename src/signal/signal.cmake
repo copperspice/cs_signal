@@ -18,34 +18,6 @@ if (CsLibGuarded_FOUND)
       CsLibGuarded::CsLibGuarded
    )
 
-   set(LibGuard_INCLUDE_PATH "")
-
-else()
-   # use annex headers
-   set(LibGuard_INCLUDE_PATH $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded>)
-endif()
-
-target_include_directories(CsSignal
-   PUBLIC
-   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/signal>
-   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-   ${LibGuard_INCLUDE_PATH}
-)
-
-target_sources(CsSignal
-   PRIVATE
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.cpp
-)
-
-set(CS_SIGNAL_INCLUDES
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_internal.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_macro.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.h
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.h
-)
-
-if (CsLibGuarded_FOUND)
    string(TOLOWER "${CS_INSTALL_MODE}" CS_INSTALL_MODE)
 
    if (NOT CS_INSTALL_MODE STREQUAL "package")
@@ -62,12 +34,37 @@ if (CsLibGuarded_FOUND)
    endif()
 
 else()
+   # use annex headers
+   target_include_directories(CsSignal
+      PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded>
+   )
+
    list(APPEND CS_SIGNAL_INCLUDES
       ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_guarded.h
       ${CMAKE_CURRENT_SOURCE_DIR}/src/annex/cs_libguarded/cs_rcu_list.h
    )
+
 endif()
 
+target_include_directories(CsSignal
+   PUBLIC
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/signal>
+   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_sources(CsSignal
+   PRIVATE
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.cpp
+)
+
+list(APPEND CS_SIGNAL_INCLUDES
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_internal.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_macro.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_signal.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/signal/cs_slot.h
+)
 
 if(MSVC)
    if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
