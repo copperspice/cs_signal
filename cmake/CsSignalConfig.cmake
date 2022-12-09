@@ -32,4 +32,4 @@ get_target_property(CsSignal_INCLUDES  CsSignal::CsSignal INTERFACE_INCLUDE_DIRE
 get_target_property(CsSignal_LIBRARIES CsSignal::CsSignal LOCATION)
 
 # export include base dir, imported in other projects
-set(CsSignal_INCLUDE_DIR  "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR")
+set(CsSignal_INCLUDE_DIR  "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@")
