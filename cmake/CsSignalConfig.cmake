@@ -1,6 +1,7 @@
+# ***********************************************************************
 #
-# Copyright (c) 2016-2022 Barbara Geller
-# Copyright (c) 2016-2022 Ansel Sermersheim
+# Copyright (c) 2016-2023 Barbara Geller
+# Copyright (c) 2016-2023 Ansel Sermersheim
 #
 # This file is part of CsSignal.
 #
@@ -13,6 +14,7 @@
 #
 # https://opensource.org/licenses/BSD-2-Clause
 #
+# ***********************************************************************
 
 if(CsSignal_FOUND)
    return()
