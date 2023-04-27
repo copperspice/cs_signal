@@ -182,8 +182,12 @@ TEST_CASE("CsSignal thread", "[cs_signal]")
 
    running = false;
 
-   // wake up the thread
-   alarm.notify_one();
+   {
+      std::lock_guard tmpGuard(mutex);
+
+      // wake up the thread
+      alarm.notify_one();
+   }
 
    thread1.join();
 
