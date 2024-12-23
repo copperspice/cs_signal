@@ -20,6 +20,24 @@ Uses the CMake build system for building and running the unit test suite. The li
 sanitizer and a major code review.
 
 
+### Running the Catch Tests
+
+To enable unit testing set the BUILD_TESTS in the root CMakeLists.txt file to ON. You can also configure the
+setting by passing -DBUILD_TESTS=ON on the CMake command line.
+
+If you do not have the Catch2 library installed the files can be download from our website. This is a header
+only library.
+
+https://download.copperspice.com/toolchain/catch/
+
+Either add the path where the Catch2 files are located or pass the path using -DCMAKE_PREFIX_PATH on the CMake
+command line. The following shows how to pass both arguments.
+
+export CMAKE_FLAGS="-DBUILD_TESTS=on -DCMAKE_PREFIX_PATH=C:/Catch2/lib/cmake/Catch2"
+
+Build this library and then run CTest in the root of your build directory.
+
+
 ### Documentation
 
 Class level documentation for CsSignal is available on the CopperSpice website:
@@ -33,7 +51,7 @@ Our YouTube channel contains over 65 videos about C++, programming fundamentals,
 graphics, CopperSpice, DoxyPress, and other software development topics.
 
 https://www.youtube.com/copperspice
-Links to additional vidoes can be found on our website.
+Links to additional videos can be found on our website.
 
 https://www.copperspice.com/presentations.html
 
