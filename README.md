@@ -14,10 +14,12 @@ a separate object.
 
 ### System Requirements
 
-To use CsSignal you will need a C++17 compiler and a C++17 standard library.
+Building CsSignal requires a C++20 compiler and a C++20 standard library.
 
-Uses the CMake build system for building and running the unit test suite. The library has been tested with clang
-sanitizer and a major code review.
+CMake build files are provided with the source distribution to build this library. The unit test binary executable is
+an optional part of the build process.
+
+This library has been tested with clang sanitizer and an extensive industry code review.
 
 
 ### Running the Catch Tests
@@ -47,10 +49,11 @@ https://www.copperspice.com/docs/cs_signal/index.html
 
 ### Presentations
 
-Our YouTube channel contains over 65 videos about C++, programming fundamentals, Unicode/Strings, multithreading,
+Our YouTube channel contains over 75 videos about C++, programming fundamentals, Unicode/Strings, multithreading,
 graphics, CopperSpice, DoxyPress, and other software development topics.
 
 https://www.youtube.com/copperspice
+
 Links to additional videos can be found on our website.
 
 https://www.copperspice.com/presentations.html
@@ -70,11 +73,14 @@ this project.
 
 ### References
 
-* Website:  https://www.copperspice.com
-* Twitter:  https://twitter.com/copperspice_cpp
-* Email:    info@copperspice.com
+ * Website:  https://www.copperspice.com
+ * Twitter:  https://twitter.com/copperspice_cpp
+ * Email:    info@copperspice.com
 
-* Github:   https://github.com/copperspice
+<!-- -->
+ * Github:   https://github.com/copperspice
 
-* Forum:    https://forum.copperspice.com
-* Journal:  https://journal.copperspice.com
+<!-- -->
+ * Forum:    https://forum.copperspice.com
+ * Journal:  https://journal.copperspice.com
+
